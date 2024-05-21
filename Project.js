@@ -18,6 +18,8 @@ export class Assignment3 extends Scene {
             ball: new defs.Subdivision_Sphere(4),
             ground: new defs.Square(1,1,1),
             sky: new defs.Square(1,1,1),
+            // pointer: new defs.Triangle()
+
 
             
         };
@@ -31,6 +33,8 @@ export class Assignment3 extends Scene {
             ring: new Material(new Ring_Shader()),
 
             ball: new Material(new defs.Phong_Shader(),{ambient: 0.5, diffusivity: 0.5,specularity: 0.5, color:  hex_color("#ffffff")}),
+            target: new Material(new defs.Phong_Shader(),
+            {ambient: 1, diffusivity: 1, color: color(1, 0, 0, 1)})
 
             
         }
@@ -43,6 +47,16 @@ export class Assignment3 extends Scene {
         this.ypos = 0;
         this.zpos = 0;
         this.wpos =0;
+        this.targets_hit = 0;
+
+        // Generate random target coordinates across the field
+        this.target_coords = [[-160/5, 0, false]];
+            for (let j = 0; j<50; j = j+5){
+                let y_coord = Math.random() * 30 + (-15);
+                let x_coord = Math.random() * 5 + j;
+                this.target_coords.push([x_coord, y_coord, false]);
+            }
+
     }
 
     make_control_panel() {
@@ -56,6 +70,8 @@ export class Assignment3 extends Scene {
         this.key_triggered_button("Attach to planet 4", ["Control", "4"], () => this.attached = () => this.planet_4);
         this.new_line();
         this.key_triggered_button("Attach to moon", ["Control", "m"], () => this.attached = () => this.moon);
+        this.new_line();
+
     }
 
     
@@ -125,7 +141,6 @@ export class Assignment3 extends Scene {
         //z-direction
         let z_t =v_0x*t*Math.cos(theta)-((0.2*g/2)*(t*Math.cos(theta))**2);
         let v_zt =v_0x*Math.cos(theta)-(0.2*g)*t*Math.cos(theta);
-        
 
         //rotation
         let omega_ball = (v_0*Math.cos(gamma))/r;
@@ -173,6 +188,8 @@ export class Assignment3 extends Scene {
         let model_transform_ball = model_transform.times(Mat4.translation(x_t,y_t,-z_t,1)).times(Mat4.rotation(omega_t,1,0,0));
         let model_transform_ground = model_transform.times(Mat4.rotation(Math.PI/2,1,0,0)).times(Mat4.translation(0,0,1,1)).times(Mat4.scale(1000,100,1000,1));
         let model_transform_sky = model_transform.times(Mat4.rotation(0,1,0,0)).times(Mat4.translation(0,0,-1000,1)).times(Mat4.scale(100,100,100,1));
+        let model_transform_target = model_transform.times(((Mat4.scale(5, 0, 5, 1)).times(Mat4.rotation(Math.PI/2,1,0,0))));
+        
 
 
         let eye_x=x_t-30;
@@ -184,7 +201,38 @@ export class Assignment3 extends Scene {
 
         this.shapes.ball.draw(context,program_state,model_transform_ball,this.materials.ball);
         this.shapes.ground.draw(context,program_state,model_transform_ground,this.materials.test2);
-    
+
+        // //Test Case for a single target
+        // let target_1_material = this.materials.target;
+        // if (!this.target_coords[0][2] && (x_t >= -160 - 5 && x_t <= -160 + 5) && (z_t >= 0 - 5 && z_t <= 0 + 5) && y_t == 0){
+        //     this.target_coords[0][2] = true;
+        //     this.targets_hit++;
+        // }
+        // if (this.target_coords[0][2]){
+        //     target_1_material = this.materials.target.override({color: hex_color("#00FF00")});
+        // }
+        // this.shapes.circle.draw(context,program_state,model_transform_target.times(Mat4.translation(-160/5,0,0)),target_1_material);
+
+        // this.shapes.circle.draw(context,program_state,model_transform_target.times(Mat4.translation(-160/5, -50/5, 0)),this.materials.target);
+
+        // Generate All Targets
+        for (let i = 0; i < this.target_coords.length; i++){
+            let model_transform_target_translated =  model_transform_target.times(Mat4.translation(this.target_coords[i][0],this.target_coords[i][1],0));
+            let target_i_material = this.materials.target;
+            // let model_transform_target_translated_pointer =  model_transform.times((Mat4.translation(0,5,0))).times(model_transform_target_translated);
+
+            // If ball has hit target
+            if (!this.target_coords[i][2] && (x_t >= this.target_coords[i][0]*5 - 5 && x_t <= this.target_coords[i][0]*5 + 5) && (this.target_coords[i][1]*5 >= 0 - 5 && this.target_coords[i][1]*5 <= 0 + 5) && y_t == 0){
+                this.target_coords[i][2] = true;
+                this.targets_hit++;
+            }
+            // If Target was already hit before
+            if (this.target_coords[i][2]){
+                target_i_material = this.materials.target.override({color: hex_color("#00FF00")});
+            }
+            this.shapes.circle.draw(context,program_state,model_transform_target_translated,target_i_material);
+            // this.shapes.pointer.draw(context,program_state,model_transform_target_translated_pointer,this.materials.target);
+        }
     }
 }
 

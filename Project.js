@@ -18,7 +18,7 @@ export class Assignment3 extends Scene {
             ball: new defs.Subdivision_Sphere(4),
             ground: new defs.Square(1,1,1),
             sky: new defs.Square(1,1,1),
-            // pointer: new defs.Triangle()
+            pointer: new defs.Triangle(),
 
 
             // Creating a Lake
@@ -57,6 +57,8 @@ export class Assignment3 extends Scene {
             // Creating a Fish
             fish_body: new Material(new Gouraud_Shader(), {ambient: 0.5, diffusivity: 0.5, color: hex_color("#7CFC00")}),
             fish_tail: new Material(new Gouraud_Shader(), {ambient: 0.5, diffusivity: 0.5, color: hex_color("#7CFC00")}),
+            pointer: new Material(new defs.Phong_Shader(),
+            {ambient: 1, diffusivity: 1, color: hex_color("#FFFF00")}),
         }
 
         this.initial_camera_location = Mat4.look_at(vec3(0, 10, 20), vec3(0, 10, 0), vec3(0, 1, 0));
@@ -68,29 +70,53 @@ export class Assignment3 extends Scene {
         this.zpos = 0;
         this.wpos =0;
         this.targets_hit = 0;
+        this.ball_hit = false;
+        this.turn_angle = 0;
+        this.x_t = 0;
+        this.y_t = 0;
+        this.z_t = 0;
+        this.omega_t = 0;
+        this.time = 0;
+
+        this.turn = function(dir) {
+            // 0 = right, 1 = left
+            if (this.ball_hit){
+                return;
+            }
+            if (dir == 0 && this.turn_angle > -Math.PI/2){
+                this.turn_angle = this.turn_angle - Math.PI/20;
+            }
+            else if (dir == 1 && this.turn_angle < Math.PI/2){
+                this.turn_angle = this.turn_angle + Math.PI/20;
+            }
+            if (this.turn_angle > Math.PI/2){
+                this.turn_angle = Math.PI/2;
+            }
+            else if(this.turn_angle < -Math.PI/2){
+                this.turn_angle = -Math.PI/2;
+            }
+        }
         
 
         // Generate random target coordinates across the field
-        this.target_coords = [[-160/5, 0, false]];
+        this.target_coords = [];
             for (let j = 0; j<50; j = j+5){
                 let y_coord = Math.random() * 30 + (-15);
                 let x_coord = Math.random() * 5 + j;
                 this.target_coords.push([x_coord, y_coord, false]);
             }
-
     }
 
     make_control_panel() {
         // Draw the scene's buttons, setup their actions and keyboard shortcuts, and monitor live measurements.
-        this.key_triggered_button("View solar system", ["Control", "0"], () => this.attached = () => null);
-        this.new_line();
-        this.key_triggered_button("Attach to planet 1", ["Control", "1"], () => this.attached = () => this.planet_1);
-        this.key_triggered_button("Attach to planet 2", ["Control", "2"], () => this.attached = () => this.planet_2);
-        this.new_line();
-        this.key_triggered_button("Attach to planet 3", ["Control", "3"], () => this.attached = () => this.planet_3);
-        this.key_triggered_button("Attach to planet 4", ["Control", "4"], () => this.attached = () => this.planet_4);
-        this.new_line();
-        this.key_triggered_button("Attach to moon", ["Control", "m"], () => this.attached = () => this.moon);
+        this.key_triggered_button("Aim Left", ["q"], () => this.turn(1));
+        this.key_triggered_button("Aim Right", ["e"], () => this.turn(0));
+        this.key_triggered_button("Hit Ball", ["h"], () => {
+            if (!this.ball_hit){
+                this.ball_hit = true;
+                }
+        });
+        // this.key_triggered_button("Attach to moon", ["Control", "m"], () => this.attached = () => this.moon);
         this.new_line();
 
     }
@@ -128,102 +154,130 @@ export class Assignment3 extends Scene {
 
         let model_transform = Mat4.identity();
 
-    
-        //Max : PI/2 Min: -PI/2
-        let theta = Math.PI/2;
-        // let theta = 0;
-        let gamma = Math.PI/2;
+        if (this.ball_hit){
+            let time_t = t - this.time;
+            //Max : PI/2 Min: -PI/2
+            let theta = this.turn_angle;
+            // let theta = 0;
+            let gamma = Math.PI/2;
 
-        // Max: PI
-        let phi = Math.PI;
+            // Max: PI
+            let phi = Math.PI/10;
 
-        //Gravitational Constant
-        const g= 9.81; // m/s^2
-        
-        //Inital velocity of the Ball
-
-        let v_0 = Math.sqrt((24.90*(phi*180/Math.PI)*0.05)/(((1/2)*m_ball*Math.sin(gamma))+((1/2)*I_ball*(1/(r**2))*Math.cos(gamma))));
-        let v_0x = v_0*Math.cos(40*Math.PI/180)*Math.sin(gamma);
-        let v_0y = v_0*Math.sin(40*Math.PI/180)*Math.sin(gamma);
-        let v_0z = v_0*Math.cos(40*Math.PI/180)*Math.sin(gamma);
-
-
-        //Displacement
-
-
-        //x-direction
-        let x_t =v_0x*t*Math.cos(theta)-((0.2*g/2)*(t*Math.sin(theta))**2);
-        let v_xt =v_0x*Math.cos(theta)-(0.2*g)*t*Math.sin(theta);
-
-
-        //y-direction
-
-        let a = (1/(2*g))*(v_0y**2);
-        let omega_n = (2*Math.PI*g)/(v_0y);
-        let alpha = 0.4;
-        
-        let y_t =Math.abs(a*Math.sin(omega_n*t)*Math.exp(-1*alpha*omega_n*t));
-
-        //z-direction
-        let z_t =v_0x*t*Math.cos(theta)-((0.2*g/2)*(t*Math.cos(theta))**2);
-        let v_zt =v_0x*Math.cos(theta)-(0.2*g)*t*Math.cos(theta);
-
-        //rotation
-        let omega_ball = (v_0*Math.cos(gamma))/r;
-        let omega_t = omega_ball*t-(22.813/2)*t**2;
-
-        
-
-         if(this.num_bounce < 4){
-             if(y_t <= 10**(-2)){
-                this.num_bounce = this.num_bounce + 1;
-                this.xpos =x_t;
-                this.ypos= y_t;
-                this.zpos = z_t;
-                this.wpos = omega_t;
-             }
-         }
-        else{
+            //Gravitational Constant
+            const g= 9.81; // m/s^2
             
-            y_t = 0;
+            //Inital velocity of the Ball
 
-            if(v_xt <0 && v_zt <0){
-                x_t = this.xpos;
-                z_t = this.zpos;
-                omega_t =this.wpos;
+            let v_0 = Math.sqrt((24.90*(phi*180/Math.PI)*0.05)/(((1/2)*m_ball*Math.sin(gamma))+((1/2)*I_ball*(1/(r**2))*Math.cos(gamma))));
+            let v_0x = v_0*Math.cos(40*Math.PI/180)*Math.sin(gamma);
+            let v_0y = v_0*Math.sin(40*Math.PI/180)*Math.sin(gamma);
+            let v_0z = v_0*Math.cos(40*Math.PI/180)*Math.sin(gamma);
+
+
+            //Displacement
+
+
+            //x-direction
+            this.x_t =v_0x*time_t*Math.cos(theta)-((0.2*g/2)*(time_t*Math.sin(theta))**2);
+            let v_xt =v_0x*Math.cos(theta)-(0.2*g)*time_t*Math.sin(theta);
+
+
+            //y-direction
+
+            let a = (1/(2*g))*(v_0y**2);
+            let omega_n = (2*Math.PI*g)/(v_0y);
+            let alpha = 0.4;
+            
+            this.y_t =Math.abs(a*Math.sin(omega_n*time_t)*Math.exp(-1*alpha*omega_n*time_t));
+
+            //z-direction
+            this.z_t =v_0x*time_t*Math.sin(theta)-((0.2*g/2)*(time_t*Math.cos(theta))**2);
+            let v_zt =v_0x*Math.sin(theta)-(0.2*g)*time_t*Math.cos(theta);
+
+            //rotation
+            let omega_ball = (v_0*Math.cos(gamma))/r;
+            this.omega_t = omega_ball*time_t-(22.813/2)*time_t**2;
+
+            
+
+            if(this.num_bounce < 4){
+                if(this.y_t <= 10**(-2)){
+                    this.num_bounce = this.num_bounce + 1;
+                    this.xpos =this.x_t;
+                    this.ypos= this.y_t;
+                    this.zpos = this.z_t;
+                    this.wpos = this.omega_t;
+                }
             }
-            else if(v_xt <0 && v_zt >=0){
-                x_t = this.xpos;
+            else{
                 
+                this.t = 0;
+
+                if(v_xt <0 && v_zt <0){
+                    this.x_t = this.xpos;
+                    this.z_t = this.zpos;
+                    this.omega_t =this.wpos;
+                }
+                else if(v_xt <0 && v_zt >=0){
+                    this.x_t = this.xpos;
+                    
+                }
+                else if(v_xt >=0 && v_zt <0){
+                    this.z_t = this.zpos;
+                }
+
+                this.xpos = this.x_t;
+                this.ypos= this.y_t;
+                this.zpos = this.z_t;
+                this.wpos = this.omega_t;
+                if (v_xt <= 0 && v_zt <= 0){
+                    this.ball_hit = false;
+                }
             }
-            else if(v_xt >=0 && v_zt <0){
-                z_t = this.zpos;
+            if (t - this.time >= 20){
+                this.ball_hit = false;
+                v_0=0;
             }
-
-            this.xpos =x_t;
-            this.ypos= y_t;
-            this.zpos = z_t;
-            this.wpos = omega_t;
-
-    
-
-    
+            // console.log(this.y_t)
+        }
+        else {
+            this.x_t = 0;
+            this.y_t = 0;
+            this.z_t = 0;
+            this.omega_t = 0;
+            this.time = t;
         }
         
         
-        let model_transform_ball = model_transform.times(Mat4.translation(x_t,y_t,-z_t,1)).times(Mat4.rotation(omega_t,1,0,0));
+        let model_transform_ball = model_transform.times(Mat4.translation(this.x_t,this.y_t,-this.z_t,1)).times(Mat4.rotation(this.omega_t,1,0,0));
         let model_transform_ground = model_transform.times(Mat4.rotation(Math.PI/2,1,0,0)).times(Mat4.translation(0,0,1,1)).times(Mat4.scale(1000,100,1000,1));
         let model_transform_sky = model_transform.times(Mat4.rotation(0,1,0,0)).times(Mat4.translation(0,0,-1000,1)).times(Mat4.scale(100,100,100,1));
         let model_transform_target = model_transform.times(((Mat4.scale(5, 0, 5, 1)).times(Mat4.rotation(Math.PI/2,1,0,0))));
         
 
 
-        let eye_x=x_t-30;
-        let eye_y=y_t+5;
-        let eye_z=-z_t-20;
+        let eye_x=this.x_t-30;
+        let eye_y=this.y_t+5;
+        let eye_z=-this.z_t;
 
-        let camera_location = Mat4.look_at(vec3(eye_x,eye_y,eye_z),vec3(x_t,y_t,-z_t),vec3(0,1,0));
-        // program_state.set_camera(camera_location);
+        let camera_location;
+        if(this.ball_hit){
+            camera_location = Mat4.look_at(vec3(eye_x,eye_y,eye_z),vec3(this.x_t,this.y_t,-this.z_t),vec3(0,1,0));
+            program_state.set_camera(camera_location);
+        }
+        else {
+            let aim_vec = vec3(Math.cos(-this.turn_angle), 1, Math.sin(-this.turn_angle));
+            camera_location = Mat4.look_at(vec3(-5,2,0),aim_vec,vec3(0,1,0));
+            program_state.set_camera(camera_location);
+            let pointer_rotation = Mat4.rotation(Math.PI/2,1,0,0).times(Mat4.rotation(Math.PI/1.3,0 , 0, 1));
+            let pointer_rotation_2 = Mat4.rotation(-this.turn_angle, 0, this.turn_angle, 1)
+            if (this.turn_angle >= 0){
+                pointer_rotation_2 = Mat4.rotation(this.turn_angle, 0, this.turn_angle, 1)
+            }
+            this.shapes.pointer.draw(context,program_state, Mat4.translation(3*Math.cos(-this.turn_angle), 0, 3*Math.sin(-this.turn_angle)).times(Mat4.translation(0,1,0)).times(Mat4.scale(3,1,3)).times(pointer_rotation_2).times(pointer_rotation), this.materials.pointer);
+
+        }
 
         this.shapes.ball.draw(context,program_state,model_transform_ball,this.materials.ball);
         // this.shapes.ground.draw(context,program_state,model_transform_ground,this.materials.test2);
@@ -234,12 +288,15 @@ export class Assignment3 extends Scene {
 
         // Generate All Targets
         for (let i = 0; i < this.target_coords.length; i++){
+            // console.log(t)
             let model_transform_target_translated =  model_transform_target.times(Mat4.translation(this.target_coords[i][0],this.target_coords[i][1],0));
             let target_i_material = this.materials.target;
             // let model_transform_target_translated_pointer =  model_transform.times((Mat4.translation(0,5,0))).times(model_transform_target_translated);
-
+            // console.log(model_transform_target_translated)
             // If ball has hit target
-            if (!this.target_coords[i][2] && (x_t >= this.target_coords[i][0]*5 - 5 && x_t <= this.target_coords[i][0]*5 + 5) && (z_t >= this.target_coords[i][1]*5  - 5 && z_t <=this.target_coords[i][1]*5  + 5) && y_t == 0){
+            // console.log(vec3(this.x_t, this.y_t, this.z_t))
+            // console.log(model_transform_target_translated[0][3])
+            if (!this.target_coords[i][2] && (this.x_t >= model_transform_target_translated[0][3]-5 && this.x_t <= model_transform_target_translated[0][3] + 5) && (this.z_t >= -model_transform_target_translated[2][3]  - 5 && this.z_t <= -model_transform_target_translated[2][3] + 5)){
                 this.target_coords[i][2] = true;
                 this.targets_hit++;
             }
@@ -250,6 +307,7 @@ export class Assignment3 extends Scene {
             this.shapes.circle.draw(context,program_state,model_transform_target_translated,target_i_material);
             // this.shapes.pointer.draw(context,program_state,model_transform_target_translated_pointer,this.materials.target);
         }
+        // console.log(t)
      
 
     }

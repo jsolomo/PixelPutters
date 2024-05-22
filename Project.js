@@ -59,7 +59,7 @@ export class Assignment3 extends Scene {
             fish_tail: new Material(new Gouraud_Shader(), {ambient: 0.5, diffusivity: 0.5, color: hex_color("#7CFC00")}),
         }
 
-        this.initial_camera_location = Mat4.look_at(vec3(0, 10, -100), vec3(0, 0, 0), vec3(0, 1, 0));
+        this.initial_camera_location = Mat4.look_at(vec3(0, 10, 20), vec3(0, 10, 0), vec3(0, 1, 0));
 
         //number of bounces
         this.num_bounce = 0;
@@ -71,7 +71,7 @@ export class Assignment3 extends Scene {
         
 
         // Generate random target coordinates across the field
-        this.target_coords = [[-255/5, 0, false]];
+        this.target_coords = [[-160/5, 0, false]];
             for (let j = 0; j<50; j = j+5){
                 let y_coord = Math.random() * 30 + (-15);
                 let x_coord = Math.random() * 5 + j;

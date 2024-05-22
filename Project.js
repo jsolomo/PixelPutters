@@ -19,7 +19,13 @@ export class Assignment3 extends Scene {
             ground: new defs.Square(1,1,1),
             sky: new defs.Square(1,1,1),
 
-            
+            // Creating a Lake
+            lake: new defs.Square(1,1,1),
+            sun: new defs.Subdivision_Sphere(4),
+
+            // Creating a Fish
+            fish_body: new defs.Subdivision_Sphere(3),
+            fish_tail: new defs.Square(1,1,1),
         };
 
         // *** Materials
@@ -32,10 +38,24 @@ export class Assignment3 extends Scene {
 
             ball: new Material(new defs.Phong_Shader(),{ambient: 0.5, diffusivity: 0.5,specularity: 0.5, color:  hex_color("#ffffff")}),
 
-            
+            // Creating a Sun and Sky
+            sun: new Material(new defs.Phong_Shader(),
+                {ambient: 1, diffusivity: 1, specularity: 0, color: hex_color("#ffffff")}),
+
+            // Creating a Ground
+            ground: new Material(new Gouraud_Shader(),
+            {ambient: 0.5, diffusivity: 0.5, color: hex_color("#7CFC00")}),
+
+            // Creating a Lake
+            lake: new Material(new defs.Phong_Shader(),
+            {ambient: 1, diffusivity: 1, color: hex_color("#00DCEC")}),
+
+            // Creating a Fish
+            fish_body: new Material(new Gouraud_Shader(), {ambient: 0.5, diffusivity: 0.5, color: hex_color("#7CFC00")}),
+            fish_tail: new Material(new Gouraud_Shader(), {ambient: 0.5, diffusivity: 0.5, color: hex_color("#7CFC00")}),
         }
 
-        this.initial_camera_location = Mat4.look_at(vec3(0, 10, 20), vec3(0, 10, 0), vec3(0, 1, 0));
+        this.initial_camera_location = Mat4.look_at(vec3(0, 10, -100), vec3(0, 0, 0), vec3(0, 1, 0));
 
         //number of bounces
         this.num_bounce = 0;
@@ -68,6 +88,10 @@ export class Assignment3 extends Scene {
             program_state.set_camera(this.initial_camera_location);
         }
 
+        // Creating Our Light Source
+        const light_position = vec4(0, 100, 50, 1);
+        program_state.lights = [new Light(light_position, color(1, 1, 1, 1), 1e9)];
+
         //time
         const t = program_state.animation_time / 1000, dt = program_state.animation_delta_time / 1000;
 
@@ -80,9 +104,6 @@ export class Assignment3 extends Scene {
         
         //Radius of the ball
         const r = 0.43/2 ; //m
-
-        const light_position = vec4(0, 5, 5, 1);
-        program_state.lights = [new Light(light_position, color(1, 1, 1, 1), 100000000)];
 
 
         program_state.projection_transform = Mat4.perspective(
@@ -179,12 +200,53 @@ export class Assignment3 extends Scene {
         let eye_y=y_t+5;
         let eye_z=-z_t-20;
 
-        let camera_location = Mat4.look_at(vec3(eye_x,eye_y,eye_z),vec3(x_t,y_t,-z_t),vec3(0,1,0));
-        program_state.set_camera(camera_location);
+        //let camera_location = Mat4.look_at(vec3(eye_x,eye_y,eye_z),vec3(x_t,y_t,-z_t),vec3(0,1,0));
+        //program_state.set_camera(camera_location);
 
         this.shapes.ball.draw(context,program_state,model_transform_ball,this.materials.ball);
-        this.shapes.ground.draw(context,program_state,model_transform_ground,this.materials.test2);
-    
+        
+        this.draw_ground(context, program_state);
+        this.draw_lake(context, program_state);
+        this.draw_fish(context, program_state, t, -35, 0, 0, 0);
+        this.draw_fish(context, program_state, t, -35, 0, 0, 10);
+    }
+
+    draw_fish(context, program_state, t, a, b, c, time_scale){
+        let fish_transform = Mat4.identity();
+        let time = t - time_scale;
+        let angular_velocity = 1;
+        let x = Math.cos(angular_velocity * time);
+        let y = Math.sin(angular_velocity * time);
+        let theta = 2 * Math.atan(y/x) + Math.PI;
+        fish_transform = fish_transform.times(Mat4.rotation(-theta, 0, 0, 1))
+            .times(Mat4.translation(a, b, c))
+            .times(Mat4.rotation(-0.005 * theta + Math.PI/2, 0, 0, 1))
+            .times(Mat4.scale(4, 2, 0.5));
+        if(time >= 0){
+            this.shapes.fish_body.draw(context, program_state, fish_transform, this.materials.fish_body);
+        }
+    }
+
+    draw_ground(context, program_state){
+        let ground_transform = Mat4.identity();
+        ground_transform = ground_transform.times(Mat4.scale(1000,10,1000,1))
+        .times(Mat4.rotation(Math.PI/2,1,0,0));
+        this.shapes.ground.draw(context, program_state, ground_transform, this.materials.ground);
+    }
+
+    draw_lake(context, program_state){
+        for(let x = -20; x < 20; x++) {
+            for (let z = -10; z < 10; z++) {
+                const distance = Math.sqrt((x - 0) ** 2 + (z - 0) ** 2);
+                console.log(distance)
+                if (distance < 20){
+                    let lake_transform = Mat4.identity();
+                    lake_transform = lake_transform.times(Mat4.translation(x * 20, 2.5, z * 20))
+                    .times(Mat4.scale(10,5,10)).times(Mat4.rotation(Math.PI/2, 1, 0,0));
+                    this.shapes.lake.draw(context,program_state,lake_transform,this.materials.lake);
+                }
+            }
+        }
     }
 }
 

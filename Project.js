@@ -129,8 +129,12 @@ export class Assignment3 extends Scene {
         let model_transform = Mat4.identity();
 
     
+        //Max : PI/2 Min: -PI/2
         let theta = Math.PI/2;
+        // let theta = 0;
         let gamma = Math.PI/2;
+
+        // Max: PI
         let phi = Math.PI;
 
         //Gravitational Constant
@@ -218,8 +222,8 @@ export class Assignment3 extends Scene {
         let eye_y=y_t+5;
         let eye_z=-z_t-20;
 
-        //let camera_location = Mat4.look_at(vec3(eye_x,eye_y,eye_z),vec3(x_t,y_t,-z_t),vec3(0,1,0));
-        //program_state.set_camera(camera_location);
+        let camera_location = Mat4.look_at(vec3(eye_x,eye_y,eye_z),vec3(x_t,y_t,-z_t),vec3(0,1,0));
+        // program_state.set_camera(camera_location);
 
         this.shapes.ball.draw(context,program_state,model_transform_ball,this.materials.ball);
         // this.shapes.ground.draw(context,program_state,model_transform_ground,this.materials.test2);
@@ -235,7 +239,7 @@ export class Assignment3 extends Scene {
             // let model_transform_target_translated_pointer =  model_transform.times((Mat4.translation(0,5,0))).times(model_transform_target_translated);
 
             // If ball has hit target
-            if (!this.target_coords[i][2] && (x_t >= this.target_coords[i][0]*5 - 5 && x_t <= this.target_coords[i][0]*5 + 5) && (this.target_coords[i][1]*5 >= 0 - 5 && this.target_coords[i][1]*5 <= 0 + 5) && y_t == 0){
+            if (!this.target_coords[i][2] && (x_t >= this.target_coords[i][0]*5 - 5 && x_t <= this.target_coords[i][0]*5 + 5) && (z_t >= this.target_coords[i][1]*5  - 5 && z_t <=this.target_coords[i][1]*5  + 5) && y_t == 0){
                 this.target_coords[i][2] = true;
                 this.targets_hit++;
             }

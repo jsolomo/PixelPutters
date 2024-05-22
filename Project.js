@@ -19,6 +19,7 @@ export class Assignment3 extends Scene {
             ground: new defs.Square(1,1,1),
             sky: new defs.Square(1,1,1),
             pointer: new defs.Triangle(),
+            bar: new defs.Square(),
 
 
             // Creating a Lake
@@ -59,6 +60,8 @@ export class Assignment3 extends Scene {
             fish_tail: new Material(new Gouraud_Shader(), {ambient: 0.5, diffusivity: 0.5, color: hex_color("#7CFC00")}),
             pointer: new Material(new defs.Phong_Shader(),
             {ambient: 1, diffusivity: 1, color: hex_color("#FFFF00")}),
+            bar: new Material(new defs.Phong_Shader(),
+            {ambient: 1, diffusivity: 1, color: hex_color("#ADD8E6")}),
         }
 
         this.initial_camera_location = Mat4.look_at(vec3(0, 10, 20), vec3(0, 10, 0), vec3(0, 1, 0));
@@ -77,6 +80,8 @@ export class Assignment3 extends Scene {
         this.z_t = 0;
         this.omega_t = 0;
         this.time = 0;
+        this.power_selected = false;
+        this.power_angle = 0;
 
         this.turn = function(dir) {
             // 0 = right, 1 = left
@@ -114,7 +119,10 @@ export class Assignment3 extends Scene {
         this.key_triggered_button("Hit Ball", ["h"], () => {
             if (!this.ball_hit){
                 this.ball_hit = true;
-                }
+            }
+            else if (!this.power_selected){
+                this.power_selected = true;
+            }
         });
         // this.key_triggered_button("Attach to moon", ["Control", "m"], () => this.attached = () => this.moon);
         this.new_line();
@@ -154,7 +162,7 @@ export class Assignment3 extends Scene {
 
         let model_transform = Mat4.identity();
 
-        if (this.ball_hit){
+        if (this.ball_hit && this.power_selected){
             let time_t = t - this.time;
             //Max : PI/2 Min: -PI/2
             let theta = this.turn_angle;
@@ -162,7 +170,7 @@ export class Assignment3 extends Scene {
             let gamma = Math.PI/2;
 
             // Max: PI
-            let phi = Math.PI/10;
+            let phi = this.power_angle;
 
             //Gravitational Constant
             const g= 9.81; // m/s^2
@@ -233,13 +241,21 @@ export class Assignment3 extends Scene {
                 this.wpos = this.omega_t;
                 if (v_xt <= 0 && v_zt <= 0){
                     this.ball_hit = false;
+                    this.power_selected = false;
                 }
             }
             if (t - this.time >= 20){
                 this.ball_hit = false;
+                this.power_selected = false;
                 v_0=0;
             }
-            // console.log(this.y_t)
+        }
+        else if (this.ball_hit && !this.power_selected) {
+            // Max angle PI/2
+            this.power_angle = -Math.PI/4 * Math.cos((Math.PI /3) * t) + Math.PI/4;
+            this.shapes.bar.draw(context,program_state, Mat4.translation(0.05,1,2.5).times(Mat4.rotation(Math.PI/2 ,Math.PI/2 -2,Math.PI/2 +50,1)).times(Mat4.scale(0.25,1,0.25)), this.materials.bar);
+            this.shapes.bar.draw(context,program_state, Mat4.translation(0,-1* Math.cos((Math.PI /3) * t) + 1,2.46).times(Mat4.rotation(Math.PI/2 ,Math.PI/2 -2,Math.PI/2 +50,1)).times(Mat4.scale(0.28,0.06,0.18)), this.materials.pointer);
+
         }
         else {
             this.x_t = 0;
@@ -248,8 +264,6 @@ export class Assignment3 extends Scene {
             this.omega_t = 0;
             this.time = t;
         }
-        
-        
         let model_transform_ball = model_transform.times(Mat4.translation(this.x_t,this.y_t,-this.z_t,1)).times(Mat4.rotation(this.omega_t,1,0,0));
         let model_transform_ground = model_transform.times(Mat4.rotation(Math.PI/2,1,0,0)).times(Mat4.translation(0,0,1,1)).times(Mat4.scale(1000,100,1000,1));
         let model_transform_sky = model_transform.times(Mat4.rotation(0,1,0,0)).times(Mat4.translation(0,0,-1000,1)).times(Mat4.scale(100,100,100,1));
@@ -262,7 +276,7 @@ export class Assignment3 extends Scene {
         let eye_z=-this.z_t;
 
         let camera_location;
-        if(this.ball_hit){
+        if(this.ball_hit && this.power_selected){
             camera_location = Mat4.look_at(vec3(eye_x,eye_y,eye_z),vec3(this.x_t,this.y_t,-this.z_t),vec3(0,1,0));
             program_state.set_camera(camera_location);
         }
@@ -288,14 +302,8 @@ export class Assignment3 extends Scene {
 
         // Generate All Targets
         for (let i = 0; i < this.target_coords.length; i++){
-            // console.log(t)
             let model_transform_target_translated =  model_transform_target.times(Mat4.translation(this.target_coords[i][0],this.target_coords[i][1],0));
             let target_i_material = this.materials.target;
-            // let model_transform_target_translated_pointer =  model_transform.times((Mat4.translation(0,5,0))).times(model_transform_target_translated);
-            // console.log(model_transform_target_translated)
-            // If ball has hit target
-            // console.log(vec3(this.x_t, this.y_t, this.z_t))
-            // console.log(model_transform_target_translated[0][3])
             if (!this.target_coords[i][2] && (this.x_t >= model_transform_target_translated[0][3]-5 && this.x_t <= model_transform_target_translated[0][3] + 5) && (this.z_t >= -model_transform_target_translated[2][3]  - 5 && this.z_t <= -model_transform_target_translated[2][3] + 5)){
                 this.target_coords[i][2] = true;
                 this.targets_hit++;
@@ -305,9 +313,7 @@ export class Assignment3 extends Scene {
                 target_i_material = this.materials.target.override({color: hex_color("#00FF00")});
             }
             this.shapes.circle.draw(context,program_state,model_transform_target_translated,target_i_material);
-            // this.shapes.pointer.draw(context,program_state,model_transform_target_translated_pointer,this.materials.target);
         }
-        // console.log(t)
      
 
     }

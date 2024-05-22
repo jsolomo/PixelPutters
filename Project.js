@@ -304,7 +304,7 @@ export class Assignment3 extends Scene {
         for (let i = 0; i < this.target_coords.length; i++){
             let model_transform_target_translated =  model_transform_target.times(Mat4.translation(this.target_coords[i][0],this.target_coords[i][1],0));
             let target_i_material = this.materials.target;
-            if (!this.target_coords[i][2] && (this.x_t >= model_transform_target_translated[0][3]-5 && this.x_t <= model_transform_target_translated[0][3] + 5) && (this.z_t >= -model_transform_target_translated[2][3]  - 5 && this.z_t <= -model_transform_target_translated[2][3] + 5)){
+            if (!this.target_coords[i][2] && (this.x_t >= model_transform_target_translated[0][3]-5 && this.x_t <= model_transform_target_translated[0][3] + 5) && (this.z_t >= -model_transform_target_translated[2][3]  - 5 && this.z_t <= -model_transform_target_translated[2][3] + 5) && y_t <= 0.5){
                 this.target_coords[i][2] = true;
                 this.targets_hit++;
             }

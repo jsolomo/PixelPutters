@@ -253,8 +253,10 @@ export class Assignment3 extends Scene {
         else if (this.ball_hit && !this.power_selected) {
             // Max angle PI/2
             this.power_angle = -Math.PI/4 * Math.cos((Math.PI /3) * t) + Math.PI/4;
-            this.shapes.bar.draw(context,program_state, Mat4.translation(0.05,1,2.5).times(Mat4.rotation(Math.PI/2 ,Math.PI/2 -2,Math.PI/2 +50,1)).times(Mat4.scale(0.25,1,0.25)), this.materials.bar);
-            this.shapes.bar.draw(context,program_state, Mat4.translation(0,-1* Math.cos((Math.PI /3) * t) + 1,2.46).times(Mat4.rotation(Math.PI/2 ,Math.PI/2 -2,Math.PI/2 +50,1)).times(Mat4.scale(0.28,0.06,0.18)), this.materials.pointer);
+            const bar_transform = model_transform.times(Mat4.inverse(program_state.camera_inverse).times(Mat4.translation(-3.48, 1, -5))).times(Mat4.scale(0.25,1,0.25));
+            const indicator_transform = model_transform.times((Mat4.translation(0,-0.9* Math.cos((Math.PI /3) * t) + 0.9, (-0.9* Math.cos((Math.PI /3) * t) + 0.9)/10).times(Mat4.inverse(program_state.camera_inverse).times(Mat4.translation(-3.48, 0.05, -4.8)).times(Mat4.scale(0.4,0.06,0.2)))));
+            this.shapes.bar.draw(context,program_state, bar_transform, this.materials.bar);
+            this.shapes.bar.draw(context,program_state, indicator_transform, this.materials.pointer);
 
         }
         else {
@@ -268,8 +270,6 @@ export class Assignment3 extends Scene {
         let model_transform_ground = model_transform.times(Mat4.rotation(Math.PI/2,1,0,0)).times(Mat4.translation(0,0,1,1)).times(Mat4.scale(1000,100,1000,1));
         let model_transform_sky = model_transform.times(Mat4.rotation(0,1,0,0)).times(Mat4.translation(0,0,-1000,1)).times(Mat4.scale(100,100,100,1));
         let model_transform_target = model_transform.times(((Mat4.scale(5, 0, 5, 1)).times(Mat4.rotation(Math.PI/2,1,0,0))));
-        
-
 
         let eye_x=this.x_t-30;
         let eye_y=this.y_t+5;

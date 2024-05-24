@@ -227,7 +227,7 @@ export class Assignment3 extends Scene {
             let theta = this.turn_angle;
             let gamma = Math.PI/2;
 
-            let phi = this.power_angle;
+            let phi = this.power_angle/2;
             const g= 9.81; // m/s^2
 
             let v_0 = Math.sqrt((24.90*(phi*180/Math.PI)*0.05)/(((1/2)*m_ball*Math.sin(gamma))+((1/2)*I_ball*(1/(r**2))*Math.cos(gamma))));
@@ -235,7 +235,7 @@ export class Assignment3 extends Scene {
             let v_0y = v_0*Math.sin(40*Math.PI/180)*Math.sin(gamma);
             let v_0z = v_0*Math.cos(40*Math.PI/180)*Math.sin(gamma);
 
-            this.x_t =v_0x*time_t*Math.cos(theta)-((0.2*g/2)*(time_t*Math.sin(theta))**2);
+            this.x_t =v_0x*time_t*Math.cos(theta)-((0.2*g/2)*(time_t*Math.sin(theta))**2) - 445;
             let v_xt =v_0x*Math.cos(theta)-(0.2*g)*time_t*Math.sin(theta);
 
             let a = (1/(2*g))*(v_0y**2);
@@ -302,17 +302,9 @@ export class Assignment3 extends Scene {
             let z_aim = Math.sin(-this.turn_angle + off_set) * bar_dist;
 
             this.power_angle = -Math.PI/4 * Math.cos((Math.PI /3) * t) + Math.PI/4;
-            let bar_transform = Mat4.identity().times(Mat4.translation(-450, 2.5, 0))
-                                .times(Mat4.rotation(angle, 0, 1, 0))
-                                .times(Mat4.translation(5, 0, 0))
-                                .times(Mat4.rotation(Math.PI/2, 0, 1, 0))
-                                .times(Mat4.scale(0.25,1,0.25))
+            const bar_transform = Mat4.identity().times(Mat4.inverse(program_state.camera_inverse).times(Mat4.translation(-3.48, 1, -5))).times(Mat4.scale(0.25,1,0.25));
             this.shapes.bar.draw(context, program_state, bar_transform, this.materials.bar);
-            let picker_transform = Mat4.identity().times(Mat4.translation(-450, -1 * Math.cos((Math.PI / 3) * t) + 2.5, 0))
-                                .times(Mat4.rotation(angle, 0, 1, 0))
-                                .times(Mat4.translation(5, 0, 0))
-                                .times(Mat4.rotation(Math.PI/2, 0, 1, 0))
-                                .times(Mat4.scale(0.28, 0.06, 0.18))
+            const picker_transform = Mat4.identity().times((Mat4.translation(0,-0.9* Math.cos((Math.PI /3) * t) + 0.9, 0).times(Mat4.inverse(program_state.camera_inverse).times(Mat4.translation(-3.48, 0.05, -4.8)).times(Mat4.scale(0.4,0.06,0.2)))));
             this.shapes.bar.draw(context, program_state, picker_transform, this.materials.pointer);
         }
     }

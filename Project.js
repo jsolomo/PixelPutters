@@ -181,7 +181,7 @@ export class Assignment3 extends Scene {
         else {
             let aim_vec = vec3(Math.cos(-this.turn_angle) * 200, 1, Math.sin(-this.turn_angle) * 200);
             camera_location = Mat4.look_at(vec3(-450,2,0),aim_vec,vec3(0,1,0));
-            program_state.set_camera(camera_location);
+            // program_state.set_camera(camera_location);
             let pointer_rotation = Mat4.rotation(Math.PI/2,1,0,0).times(Mat4.rotation(Math.PI/1.3,0 , 0, 1));
             let pointer_rotation_2 = Mat4.rotation(-this.turn_angle, 0, this.turn_angle, 1)
             if (this.turn_angle >= 0){
@@ -311,8 +311,20 @@ export class Assignment3 extends Scene {
 
     get_new_coords(){
         for (let j = 0; j < 10; j++){
-            let z_coord = Math.random() * 200 + (-100);
-            let x_coord = Math.random() * 100;
+            let z_coord = Math.random() * 140 + (-110);
+            let x_coord;
+            if (z_coord <= 5 && z_coord >= -2){
+                x_coord = Math.random() * 55 + 20;
+            }
+            else if (z_coord >= -2 && z_coord >= 60-110){
+                x_coord = Math.random() * 75 + 20;
+            }
+            else if (z_coord >= -60-100){
+                x_coord = Math.random() * 110 + 20;
+            }
+            else {
+                x_coord = Math.random() * 30 + 20;
+            }
             this.target_coords.push([x_coord, z_coord, false]);
         }
     }

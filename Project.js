@@ -27,8 +27,12 @@ export class Assignment3 extends Scene {
             sun: new defs.Subdivision_Sphere(4),
 
             // Creating a Fish
-            fish_body: new defs.Subdivision_Sphere(3),
-            fish_tail: new defs.Square(1,1,1),
+            fish_body: new defs.Subdivision_Sphere(2),
+            fish_tail: new defs.Cube(),
+
+            //Creating a Tree
+            tree_stalk: new defs.Cube(),
+            tree_head: new defs.Subdivision_Sphere(2),
         };
 
         // *** Materials
@@ -56,15 +60,21 @@ export class Assignment3 extends Scene {
             {ambient: 1, diffusivity: 1, color: hex_color("#00DCEC")}),
 
             // Creating a Fish
-            fish_body: new Material(new Gouraud_Shader(), {ambient: 0.5, diffusivity: 0.5, color: hex_color("#7CFC00")}),
-            fish_tail: new Material(new Gouraud_Shader(), {ambient: 0.5, diffusivity: 0.5, color: hex_color("#7CFC00")}),
+            fish_body: new Material(new Gouraud_Shader(), {ambient: 0.5, diffusivity: 0.5, specularity: 0, color: hex_color("#FFA500")}),
+            fish_tail: new Material(new Gouraud_Shader(), {ambient: 0.5, diffusivity: 0.5, specularity: 0, color: hex_color("#000000")}),
+
+            //Creating a Tree
+            tree_stalk: new Material(new Gouraud_Shader(), {ambient: 0.5, diffusivity: 0.5, color: hex_color("#725C42")}),
+            tree_head: new Material(new Gouraud_Shader(), {ambient: 0.5, diffusivity: 0.5, specularity: 0, color: hex_color("#7CFC00")}),
+
             pointer: new Material(new defs.Phong_Shader(),
             {ambient: 1, diffusivity: 1, color: hex_color("#FFFF00")}),
             bar: new Material(new defs.Phong_Shader(),
             {ambient: 1, diffusivity: 1, color: hex_color("#ADD8E6")}),
         }
 
-        this.initial_camera_location = Mat4.look_at(vec3(0, 10, 20), vec3(0, 10, 0), vec3(0, 1, 0));
+        this.initial_camera_location = Mat4.look_at(vec3(-450, 10, 0), vec3(0, 0, 0), vec3(1, 0, 0));
+        //this.initial_camera_location = Mat4.look_at(vec3(0, 10, 20), vec3(0, 0, 0), vec3(0, 1, 0));
 
         //number of bounces
         this.num_bounce = 0;
@@ -75,7 +85,7 @@ export class Assignment3 extends Scene {
         this.targets_hit = 0;
         this.ball_hit = false;
         this.turn_angle = 0;
-        this.x_t = 0;
+        this.x_t = -450;
         this.y_t = 0;
         this.z_t = 0;
         this.omega_t = 0;
@@ -88,28 +98,24 @@ export class Assignment3 extends Scene {
             if (this.ball_hit){
                 return;
             }
-            if (dir == 0 && this.turn_angle > -Math.PI/2){
+            if (dir == 0 && this.turn_angle > -Math.PI/4){
                 this.turn_angle = this.turn_angle - Math.PI/20;
             }
-            else if (dir == 1 && this.turn_angle < Math.PI/2){
+            else if (dir == 1 && this.turn_angle < Math.PI/4){
                 this.turn_angle = this.turn_angle + Math.PI/20;
             }
-            if (this.turn_angle > Math.PI/2){
-                this.turn_angle = Math.PI/2;
+            if (this.turn_angle > Math.PI/4){
+                this.turn_angle = Math.PI/4;
             }
-            else if(this.turn_angle < -Math.PI/2){
-                this.turn_angle = -Math.PI/2;
+            else if(this.turn_angle < -Math.PI/4){
+                this.turn_angle = -Math.PI/4;
             }
         }
         
 
         // Generate random target coordinates across the field
         this.target_coords = [];
-            for (let j = 0; j<50; j = j+5){
-                let y_coord = Math.random() * 30 + (-15);
-                let x_coord = Math.random() * 5 + j;
-                this.target_coords.push([x_coord, y_coord, false]);
-            }
+        this.get_new_coords();
     }
 
     make_control_panel() {
@@ -131,83 +137,117 @@ export class Assignment3 extends Scene {
 
     
     display(context, program_state) {
-        // display():  Called once per frame of animation.
-        // Setup -- This part sets up the scene's overall camera matrix, projection matrix, and lights:
         if (!context.scratchpad.controls) {
             this.children.push(context.scratchpad.controls = new defs.Movement_Controls());
-            // Define the global camera and projection matrices, which are stored in program_state.
             program_state.set_camera(this.initial_camera_location);
         }
 
-        // Creating Our Light Source
-        const light_position = vec4(0, 100, 50, 1);
-        program_state.lights = [new Light(light_position, color(1, 1, 1, 1), 1e9)];
-
-        //time
+        program_state.projection_transform = Mat4.perspective(Math.PI / 4, context.width / context.height, .1, 1000);
+        
+        // Getting the time
         const t = program_state.animation_time / 1000, dt = program_state.animation_delta_time / 1000;
 
-        //Mass of ball
-        const m_ball = 0.046; // kg
-
-        //Moments of inertia
-        const I_club = 1.28; //kg *m^2
-        const I_ball = 8.5054*10**(-6);//kg *m^2
-        
-        //Radius of the ball
-        const r = 0.43/2 ; //m
-
-
-        program_state.projection_transform = Mat4.perspective(
-            Math.PI / 4, context.width / context.height, .1, 1000);
+        // Setting up the lights
+        const light_position = vec4(0, 100, 0, 1);
+        program_state.lights = [new Light(light_position, color(1, 1, 1, 1), 1e9)];
 
         let model_transform = Mat4.identity();
+        this.update_ball_coord(t);
+        this.generate_powermeter(context, program_state, t)
+        if(!this.ball_hit && !this.power_selected) {
+            this.x_t = -445;
+            this.y_t = 1;
+            this.z_t = 0;
+            this.omega_t = 0;
+            this.time = t;
+        }
+        let ball_transform = model_transform.times(Mat4.translation(this.x_t,this.y_t,-this.z_t,1))
+                                .times(Mat4.rotation(this.omega_t,1,0,0));
+        let model_transform_ground = model_transform.times(Mat4.rotation(Math.PI/2,1,0,0)).times(Mat4.translation(0,0,1,1)).times(Mat4.scale(1000,100,1000,1));
+        let model_transform_sky = model_transform.times(Mat4.rotation(0,1,0,0)).times(Mat4.translation(0,0,-1000,1)).times(Mat4.scale(100,100,100,1));
+        let model_transform_target = model_transform.times(((Mat4.scale(5, 0, 5, 1)).times(Mat4.rotation(Math.PI/2,1,0,0))));
+        
+
+
+        let eye_x = this.x_t - 30;
+        let eye_y = this.y_t + 5;
+        let eye_z =- this.z_t;
+
+        let camera_location;
+        if(this.ball_hit && this.power_selected){
+            camera_location = Mat4.look_at(vec3(eye_x,eye_y,eye_z),vec3(this.x_t,this.y_t,-this.z_t),vec3(0,1,0));
+            program_state.set_camera(camera_location);
+        }
+        else {
+            let aim_vec = vec3(Math.cos(-this.turn_angle) * 200, 1, Math.sin(-this.turn_angle) * 200);
+            camera_location = Mat4.look_at(vec3(-450,2,0),aim_vec,vec3(0,1,0));
+            program_state.set_camera(camera_location);
+            let pointer_rotation = Mat4.rotation(Math.PI/2,1,0,0).times(Mat4.rotation(Math.PI/1.3,0 , 0, 1));
+            let pointer_rotation_2 = Mat4.rotation(-this.turn_angle, 0, this.turn_angle, 1)
+            if (this.turn_angle >= 0){
+                pointer_rotation_2 = Mat4.rotation(this.turn_angle, 0, this.turn_angle, 1)
+            }
+            this.shapes.pointer.draw(context,program_state, Mat4.translation(3*Math.cos(-this.turn_angle), 0, 3*Math.sin(-this.turn_angle)).times(Mat4.translation(0,1,0)).times(Mat4.scale(3,1,3)).times(pointer_rotation_2).times(pointer_rotation), this.materials.pointer);
+        }
+
+        this.shapes.ball.draw(context, program_state, ball_transform, this.materials.ball);
+        this.draw_ground(context, program_state, 500);
+        this.draw_lake(context, program_state, 20, 10);
+        this.draw_tree(context, program_state);
+        this.draw_fish(context, program_state, t, -100, 0, 350, 0);
+
+        // Generate All Targets
+        /*for (let i = 0; i < this.target_coords.length; i++){
+            let model_transform_target_translated =  model_transform_target.times(Mat4.translation(this.target_coords[i][0],this.target_coords[i][1],0));
+            let target_i_material = this.materials.target;
+            if (!this.target_coords[i][2] && (this.x_t >= model_transform_target_translated[0][3]-5 && this.x_t <= model_transform_target_translated[0][3] + 5) && (this.z_t >= -model_transform_target_translated[2][3]  - 5 && this.z_t <= -model_transform_target_translated[2][3] + 5) && this.y_t <= 0.5){
+                this.target_coords[i][2] = true;
+                this.targets_hit++;
+            }
+            // If Target was already hit before
+            if (this.target_coords[i][2]){
+                target_i_material = this.materials.target.override({color: hex_color("#00FF00")});
+            }
+            this.shapes.circle.draw(context,program_state,model_transform_target_translated,target_i_material);
+        }*/
+        this.generate_targets(context, program_state);
+     
+
+    }
+
+    update_ball_coord(t){
+        //Ball and Club Properties
+        const m_ball = 0.046; // kg
+        const I_club = 1.28; //kg *m^2
+        const I_ball = 8.5054*10**(-6); //kg *m^2
+        const r = 0.43/2; //m
 
         if (this.ball_hit && this.power_selected){
             let time_t = t - this.time;
-            //Max : PI/2 Min: -PI/2
             let theta = this.turn_angle;
-            // let theta = 0;
             let gamma = Math.PI/2;
 
-            // Max: PI
             let phi = this.power_angle;
-
-            //Gravitational Constant
             const g= 9.81; // m/s^2
-            
-            //Inital velocity of the Ball
 
             let v_0 = Math.sqrt((24.90*(phi*180/Math.PI)*0.05)/(((1/2)*m_ball*Math.sin(gamma))+((1/2)*I_ball*(1/(r**2))*Math.cos(gamma))));
             let v_0x = v_0*Math.cos(40*Math.PI/180)*Math.sin(gamma);
             let v_0y = v_0*Math.sin(40*Math.PI/180)*Math.sin(gamma);
             let v_0z = v_0*Math.cos(40*Math.PI/180)*Math.sin(gamma);
 
-
-            //Displacement
-
-
-            //x-direction
             this.x_t =v_0x*time_t*Math.cos(theta)-((0.2*g/2)*(time_t*Math.sin(theta))**2);
             let v_xt =v_0x*Math.cos(theta)-(0.2*g)*time_t*Math.sin(theta);
-
-
-            //y-direction
 
             let a = (1/(2*g))*(v_0y**2);
             let omega_n = (2*Math.PI*g)/(v_0y);
             let alpha = 0.4;
-            
             this.y_t =Math.abs(a*Math.sin(omega_n*time_t)*Math.exp(-1*alpha*omega_n*time_t));
 
-            //z-direction
-            this.z_t =v_0x*time_t*Math.sin(theta)-((0.2*g/2)*(time_t*Math.cos(theta))**2);
-            let v_zt =v_0x*Math.sin(theta)-(0.2*g)*time_t*Math.cos(theta);
+            this.z_t =v_0z*time_t*Math.sin(theta)-((0.2*g/2)*(time_t*Math.cos(theta))**2);
+            let v_zt =v_0z*Math.sin(theta)-(0.2*g)*time_t*Math.cos(theta);
 
-            //rotation
             let omega_ball = (v_0*Math.cos(gamma))/r;
             this.omega_t = omega_ball*time_t-(22.813/2)*time_t**2;
-
-            
 
             if(this.num_bounce < 4){
                 if(this.y_t <= 10**(-2)){
@@ -218,10 +258,8 @@ export class Assignment3 extends Scene {
                     this.wpos = this.omega_t;
                 }
             }
-            else{
-                
+            else {
                 this.t = 0;
-
                 if(v_xt <0 && v_zt <0){
                     this.x_t = this.xpos;
                     this.z_t = this.zpos;
@@ -229,7 +267,6 @@ export class Assignment3 extends Scene {
                 }
                 else if(v_xt <0 && v_zt >=0){
                     this.x_t = this.xpos;
-                    
                 }
                 else if(v_xt >=0 && v_zt <0){
                     this.z_t = this.zpos;
@@ -250,73 +287,55 @@ export class Assignment3 extends Scene {
                 v_0=0;
             }
         }
-        else if (this.ball_hit && !this.power_selected) {
-            // Max angle PI/2
-            this.power_angle = -Math.PI/4 * Math.cos((Math.PI /3) * t) + Math.PI/4;
-            this.shapes.bar.draw(context,program_state, Mat4.translation(0.05,1,2.5).times(Mat4.rotation(Math.PI/2 ,Math.PI/2 -2,Math.PI/2 +50,1)).times(Mat4.scale(0.25,1,0.25)), this.materials.bar);
-            this.shapes.bar.draw(context,program_state, Mat4.translation(0,-1* Math.cos((Math.PI /3) * t) + 1,2.46).times(Mat4.rotation(Math.PI/2 ,Math.PI/2 -2,Math.PI/2 +50,1)).times(Mat4.scale(0.28,0.06,0.18)), this.materials.pointer);
-
-        }
-        else {
-            this.x_t = 0;
-            this.y_t = 0;
-            this.z_t = 0;
-            this.omega_t = 0;
-            this.time = t;
-        }
-        let model_transform_ball = model_transform.times(Mat4.translation(this.x_t,this.y_t,-this.z_t,1)).times(Mat4.rotation(this.omega_t,1,0,0));
-        let model_transform_ground = model_transform.times(Mat4.rotation(Math.PI/2,1,0,0)).times(Mat4.translation(0,0,1,1)).times(Mat4.scale(1000,100,1000,1));
-        let model_transform_sky = model_transform.times(Mat4.rotation(0,1,0,0)).times(Mat4.translation(0,0,-1000,1)).times(Mat4.scale(100,100,100,1));
-        let model_transform_target = model_transform.times(((Mat4.scale(5, 0, 5, 1)).times(Mat4.rotation(Math.PI/2,1,0,0))));
-        
-
-
-        let eye_x=this.x_t-30;
-        let eye_y=this.y_t+5;
-        let eye_z=-this.z_t;
-
-        let camera_location;
-        if(this.ball_hit && this.power_selected){
-            camera_location = Mat4.look_at(vec3(eye_x,eye_y,eye_z),vec3(this.x_t,this.y_t,-this.z_t),vec3(0,1,0));
-            program_state.set_camera(camera_location);
-        }
-        else {
-            let aim_vec = vec3(Math.cos(-this.turn_angle), 1, Math.sin(-this.turn_angle));
-            camera_location = Mat4.look_at(vec3(-5,2,0),aim_vec,vec3(0,1,0));
-            program_state.set_camera(camera_location);
-            let pointer_rotation = Mat4.rotation(Math.PI/2,1,0,0).times(Mat4.rotation(Math.PI/1.3,0 , 0, 1));
-            let pointer_rotation_2 = Mat4.rotation(-this.turn_angle, 0, this.turn_angle, 1)
-            if (this.turn_angle >= 0){
-                pointer_rotation_2 = Mat4.rotation(this.turn_angle, 0, this.turn_angle, 1)
-            }
-            this.shapes.pointer.draw(context,program_state, Mat4.translation(3*Math.cos(-this.turn_angle), 0, 3*Math.sin(-this.turn_angle)).times(Mat4.translation(0,1,0)).times(Mat4.scale(3,1,3)).times(pointer_rotation_2).times(pointer_rotation), this.materials.pointer);
-
-        }
-
-        this.shapes.ball.draw(context,program_state,model_transform_ball,this.materials.ball);
-        // this.shapes.ground.draw(context,program_state,model_transform_ground,this.materials.test2);
-        this.draw_ground(context, program_state);
-        // this.draw_lake(context, program_state);
-        // this.draw_fish(context, program_state, t, -35, 0, 0, 0);
-        // this.draw_fish(context, program_state, t, -35, 0, 0, 10);
-
-        // Generate All Targets
-        for (let i = 0; i < this.target_coords.length; i++){
-            let model_transform_target_translated =  model_transform_target.times(Mat4.translation(this.target_coords[i][0],this.target_coords[i][1],0));
-            let target_i_material = this.materials.target;
-            if (!this.target_coords[i][2] && (this.x_t >= model_transform_target_translated[0][3]-5 && this.x_t <= model_transform_target_translated[0][3] + 5) && (this.z_t >= -model_transform_target_translated[2][3]  - 5 && this.z_t <= -model_transform_target_translated[2][3] + 5) && this.y_t <= 0.5){
-                this.target_coords[i][2] = true;
-                this.targets_hit++;
-            }
-            // If Target was already hit before
-            if (this.target_coords[i][2]){
-                target_i_material = this.materials.target.override({color: hex_color("#00FF00")});
-            }
-            this.shapes.circle.draw(context,program_state,model_transform_target_translated,target_i_material);
-        }
-     
-
     }
+
+    generate_powermeter(context, program_state, t){
+        if (this.ball_hit && !this.power_selected) {
+            let aim_vec = vec3(Math.cos(-this.turn_angle) * 200 - 450, 3, Math.sin(-this.turn_angle) + 3.25);
+            let camera_location = Mat4.look_at(vec3(-450,2,0),aim_vec,vec3(0,1,0));
+
+            let bar_dist = Math.sqrt(25 + (3.5 ** 2));
+            let off_set = Math.atan(3/5);
+            let angle = this.turn_angle;
+            console.log(off_set);
+            let x_aim = Math.cos(-this.turn_angle + off_set) * bar_dist;
+            let z_aim = Math.sin(-this.turn_angle + off_set) * bar_dist;
+
+            this.power_angle = -Math.PI/4 * Math.cos((Math.PI /3) * t) + Math.PI/4;
+            let bar_transform = Mat4.identity().times(Mat4.translation(-450, 2.5, 0))
+                                .times(Mat4.rotation(angle, 0, 1, 0))
+                                .times(Mat4.translation(5, 0, 0))
+                                .times(Mat4.rotation(Math.PI/2, 0, 1, 0))
+                                .times(Mat4.scale(0.25,1,0.25))
+            this.shapes.bar.draw(context, program_state, bar_transform, this.materials.bar);
+            let picker_transform = Mat4.identity().times(Mat4.translation(-450, -1 * Math.cos((Math.PI / 3) * t) + 2.5, 0))
+                                .times(Mat4.rotation(angle, 0, 1, 0))
+                                .times(Mat4.translation(5, 0, 0))
+                                .times(Mat4.rotation(Math.PI/2, 0, 1, 0))
+                                .times(Mat4.scale(0.28, 0.06, 0.18))
+            this.shapes.bar.draw(context, program_state, picker_transform, this.materials.pointer);
+        }
+    }
+
+    get_new_coords(){
+        for (let j = 0; j < 10; j++){
+            let z_coord = Math.random() * 200 + (-100);
+            let x_coord = Math.random() * 100;
+            this.target_coords.push([x_coord, z_coord, false]);
+        }
+    }
+
+    generate_targets(context, program_state){ // Finish Target functionality by changing colors and also recognizing hits
+        for (let i = 0; i < this.target_coords.length; i++){
+            let transform = Mat4.identity();
+            transform = transform
+                .times(Mat4.translation(-450 + this.target_coords[i][0], 0.75, this.target_coords[i][1] + 50))
+                .times((Mat4.scale(5, 0, 5, 1)))
+                .times(Mat4.rotation(Math.PI/2,1,0,0));
+            this.shapes.circle.draw(context,program_state,transform,this.materials.target);
+        }
+    }
+
     draw_fish(context, program_state, t, a, b, c, time_scale){
         let fish_transform = Mat4.identity();
         let time = t - time_scale;
@@ -324,30 +343,62 @@ export class Assignment3 extends Scene {
         let x = Math.cos(angular_velocity * time);
         let y = Math.sin(angular_velocity * time);
         let theta = 2 * Math.atan(y/x) + Math.PI;
-        fish_transform = fish_transform.times(Mat4.rotation(-theta, 0, 0, 1))
-            .times(Mat4.translation(a, b, c))
-            .times(Mat4.rotation(-0.005 * theta + Math.PI/2, 0, 0, 1))
+        fish_transform = fish_transform.times(Mat4.translation(a, b, 100))
+            .times(Mat4.rotation(-theta, 1, 0, 0))
+            .times(Mat4.translation(a, b, 25))
+            .times(Mat4.rotation(-0.25 * theta + Math.PI/4, 1, 0, 0))
             .times(Mat4.scale(4, 2, 0.5));
+
+        let tail_transform = Mat4.identity().times(Mat4.translation(a, b, 100))
+            .times(Mat4.rotation(-theta, 1, 0, 0))
+            .times(Mat4.translation(a-1, b - 2, 25-0.5))
+            .times(Mat4.rotation(-0.25 * theta + Math.PI/4, 1, 0, 0))
+            .times(Mat4.scale(1, 2, 0.5));
+        
         if(time >= 0){
             this.shapes.fish_body.draw(context, program_state, fish_transform, this.materials.fish_body);
+            this.shapes.fish_tail.draw(context, program_state, tail_transform, this.materials.fish_tail);
+        }
+    }
+
+    draw_tree(context, program_state){
+        let height = 40;
+        for(let z = -450; z < 450; z += 75){
+            for(let x = -450; x < 450; x+= 50){
+                if (z < -250 || z > 350){
+                    let transform = Mat4.identity();
+                    transform = transform.times(Mat4.translation(x, height, z)).times(Mat4.scale(5, height, 5));
+                    this.shapes.tree_stalk.draw(context, program_state, transform, this.materials.tree_stalk);
+                }
+            }
+        }
+
+        for(let z = -450; z < 450; z += 75){
+            for(let x = -450; x < 450; x+= 50){
+                if (z < -250 || z > 350){
+                    let transform = Mat4.identity();
+                    transform = transform.times(Mat4.translation(x, 2 * height, z)).times(Mat4.scale(35, 35, 40));
+                    this.shapes.tree_head.draw(context, program_state, transform, this.materials.tree_head);
+                }
+            }
         }
     }
     
-    draw_ground(context, program_state) {
-        let model_transform_ground = Mat4.identity().times(Mat4.rotation(Math.PI/2,1,0,0)).times(Mat4.translation(0,0,1,1)).times(Mat4.scale(1000,100,1000,1));
-        // ground_transform = ground_transform.times(Mat4.scale(1000,10,1000,1))
-        // .times(Mat4.rotation(Math.PI/2,1,0,0));
-        this.shapes.ground.draw(context, program_state, model_transform_ground, this.materials.ground);
+    draw_ground(context, program_state, size) {
+        let ground_transform = Mat4.identity();
+        ground_transform = ground_transform.times(Mat4.scale(size,10,size,1))
+            .times(Mat4.rotation(Math.PI/2,1,0,0));
+        this.shapes.ground.draw(context, program_state, ground_transform, this.materials.ground);
     }
     
-    draw_lake(context, program_state){
-        for(let x = -20; x < 20; x++) {
-            for (let z = -10; z < 10; z++) {
+    draw_lake(context, program_state, x_rad, y_rad){
+        for(let x = -x_rad; x < x_rad; x++) {
+            for (let z = -y_rad; z < y_rad; z++) {
                 const distance = Math.sqrt((x - 0) ** 2 + (z - 0) ** 2);
                 // console.log(distance)
-                if (distance < 20){
+                if (distance < y_rad){
                     let lake_transform = Mat4.identity();
-                    lake_transform = lake_transform.times(Mat4.translation(x * 20, 2.5, z * 20))
+                    lake_transform = lake_transform.times(Mat4.translation(x * 20 - 200, 0.5, z * 20 + 150))
                     .times(Mat4.scale(10,5,10)).times(Mat4.rotation(Math.PI/2, 1, 0,0));
                     this.shapes.lake.draw(context,program_state,lake_transform,this.materials.lake);
                 }

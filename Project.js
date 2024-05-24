@@ -98,17 +98,17 @@ export class Assignment3 extends Scene {
             if (this.ball_hit){
                 return;
             }
-            if (dir == 0 && this.turn_angle > -Math.PI/4){
+            if (dir == 0 && this.turn_angle > -Math.PI/2){
                 this.turn_angle = this.turn_angle - Math.PI/20;
             }
-            else if (dir == 1 && this.turn_angle < Math.PI/4){
+            else if (dir == 1 && this.turn_angle < Math.PI/2){
                 this.turn_angle = this.turn_angle + Math.PI/20;
             }
-            if (this.turn_angle > Math.PI/4){
-                this.turn_angle = Math.PI/4;
+            if (this.turn_angle > Math.PI/2){
+                this.turn_angle = Math.PI/2;
             }
-            else if(this.turn_angle < -Math.PI/4){
-                this.turn_angle = -Math.PI/4;
+            else if(this.turn_angle < -Math.PI/2){
+                this.turn_angle = -Math.PI/2;
             }
         }
         
@@ -130,6 +130,10 @@ export class Assignment3 extends Scene {
                 this.power_selected = true;
             }
         });
+        // this.key_triggered_button("Quick Restart", ["r"], () => {
+        //     this.ball_hit = !this.ball_hit
+        //     this.power_selected = !this.power_selected
+        // });
         // this.key_triggered_button("Attach to moon", ["Control", "m"], () => this.attached = () => this.moon);
         this.new_line();
 
@@ -227,7 +231,7 @@ export class Assignment3 extends Scene {
             let theta = this.turn_angle;
             let gamma = Math.PI/2;
 
-            let phi = this.power_angle;
+            let phi = this.power_angle / 2;
             const g= 9.81; // m/s^2
 
             let v_0 = Math.sqrt((24.90*(phi*180/Math.PI)*0.05)/(((1/2)*m_ball*Math.sin(gamma))+((1/2)*I_ball*(1/(r**2))*Math.cos(gamma))));
@@ -259,7 +263,7 @@ export class Assignment3 extends Scene {
                 }
             }
             else {
-                this.t = 0;
+                // this.t = 0;
                 if(v_xt <0 && v_zt <0){
                     this.x_t = this.xpos;
                     this.z_t = this.zpos;
@@ -279,8 +283,10 @@ export class Assignment3 extends Scene {
                 if (v_xt <= 0 && v_zt <= 0){
                     this.ball_hit = false;
                     this.power_selected = false;
+                    v_0 = 0;
                 }
             }
+            // console.log(theta)
             if (t - this.time >= 20){
                 this.ball_hit = false;
                 this.power_selected = false;
@@ -343,7 +349,7 @@ export class Assignment3 extends Scene {
             let target_i_material = this.materials.target;
             // console.log(vec3(this.x_t, this.y_t, this.z_t))
             // console.log(transform)
-            if (!this.target_coords[i][2] && (this.x_t >= transform[0][3]-5 && this.x_t <= transform[0][3] + 5 ) && (this.z_t >= -transform[2][3]  - 5  && this.z_t <= -transform[2][3] + 5 ) && this.y_t <= 0.5){
+            if (!this.target_coords[i][2] && (this.x_t >= transform[0][3]-5 && this.x_t <= transform[0][3] + 5 ) && (this.z_t >= -transform[2][3]  - 5  && this.z_t <= -transform[2][3] + 5 ) && this.y_t <= 1){
                 this.target_coords[i][2] = true;
                 this.targets_hit++;
             }

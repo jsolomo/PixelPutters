@@ -241,7 +241,7 @@ export class Assignment3 extends Scene {
             let a = (1/(2*g))*(v_0y**2);
             let omega_n = (2*Math.PI*g)/(v_0y);
             let alpha = 0.4;
-            this.y_t =Math.abs(a*Math.sin(omega_n*time_t)*Math.exp(-1*alpha*omega_n*time_t));
+            this.y_t =Math.abs(a*Math.sin(omega_n*time_t)*Math.exp(-1*alpha*omega_n*time_t)) + 1;
 
             this.z_t =v_0z*time_t*Math.sin(theta)-((0.2*g/2)*(time_t*Math.cos(theta))**2);
             let v_zt =v_0z*Math.sin(theta)-(0.2*g)*time_t*Math.cos(theta);
@@ -302,9 +302,9 @@ export class Assignment3 extends Scene {
             let z_aim = Math.sin(-this.turn_angle + off_set) * bar_dist;
 
             this.power_angle = -Math.PI/4 * Math.cos((Math.PI /3) * t) + Math.PI/4;
-            const bar_transform = Mat4.identity().times(Mat4.inverse(program_state.camera_inverse).times(Mat4.translation(-3.48, 1, -5))).times(Mat4.scale(0.25,1,0.25));
+            const bar_transform = Mat4.identity().times(Mat4.inverse(program_state.camera_inverse).times(Mat4.translation(-3.48, 1, -5.25))).times(Mat4.scale(0.25,1,0.25));
             this.shapes.bar.draw(context, program_state, bar_transform, this.materials.bar);
-            const picker_transform = Mat4.identity().times((Mat4.translation(0,-0.9* Math.cos((Math.PI /3) * t) + 0.9, 0).times(Mat4.inverse(program_state.camera_inverse).times(Mat4.translation(-3.48, 0.05, -4.8)).times(Mat4.scale(0.4,0.06,0.2)))));
+            const picker_transform = Mat4.identity().times((Mat4.translation(0,-0.9* Math.cos((Math.PI /3) * t) + 0.9, 0).times(Mat4.inverse(program_state.camera_inverse).times(Mat4.translation(-3.48, 0.1, -5.25)).times(Mat4.scale(0.3,0.06,0.2)))));
             this.shapes.bar.draw(context, program_state, picker_transform, this.materials.pointer);
         }
     }

@@ -75,6 +75,8 @@ export class Assignment3 extends Scene {
             {ambient: 1, diffusivity: 1, color: hex_color("#FFFF00")}),
             bar: new Material(new defs.Phong_Shader(),
             {ambient: 1, diffusivity: 1, color: hex_color("#ADD8E6")}),
+            scoreboard: new Material(new defs.Phong_Shader(),
+            {ambient: 1, diffusivity: 1, color: hex_color("#FFE36E")}),
             texture: new Material(new Textured_Phong(), {
                 color: color(0, 0, 0, 1),
                 ambient: 1,
@@ -101,6 +103,7 @@ export class Assignment3 extends Scene {
         this.time = 0;
         this.power_selected = false;
         this.power_angle = 0;
+        this.level = 0;
 
         this.turn = function(dir) {
             // 0 = right, 1 = left
@@ -124,7 +127,10 @@ export class Assignment3 extends Scene {
 
         // Generate random target coordinates across the field
         this.target_coords = [];
-        this.get_new_coords();
+        if (this.level == 0){
+            this.level++;
+            this.get_new_coords();
+        }
     }
 
     make_control_panel() {
@@ -139,10 +145,10 @@ export class Assignment3 extends Scene {
                 this.power_selected = true;
             }
         });
-        // this.key_triggered_button("Quick Restart", ["r"], () => {
-        //     this.ball_hit = !this.ball_hit
-        //     this.power_selected = !this.power_selected
-        // });
+        this.key_triggered_button("Quick Restart", ["r"], () => {
+            this.ball_hit = !this.ball_hit
+            this.power_selected = !this.power_selected
+        });
         // this.key_triggered_button("Attach to moon", ["Control", "m"], () => this.attached = () => this.moon);
         this.new_line();
 
@@ -193,7 +199,7 @@ export class Assignment3 extends Scene {
         }
         else {
             let aim_vec = vec3(Math.cos(-this.turn_angle) * 200, 1, Math.sin(-this.turn_angle) * 200);
-            camera_location = Mat4.look_at(vec3(-450,2,0),aim_vec,vec3(0,1,0));
+            camera_location = Mat4.look_at(vec3(-455,3,0),aim_vec,vec3(0,1,0));
             program_state.set_camera(camera_location);
             let pointer_rotation = Mat4.rotation(Math.PI/2,1,0,0).times(Mat4.rotation(Math.PI/1.3,0 , 0, 1));
             let pointer_rotation_2 = Mat4.rotation(-this.turn_angle, 0, this.turn_angle, 1)
@@ -327,26 +333,38 @@ export class Assignment3 extends Scene {
     }
 
     get_new_coords(){
-        for (let j = 0; j < 10; j++){
+        this.target_coords = [];
+        for (let j = 0; j < 4; j++){
+            console.log(this.level)
             let z_coord = Math.random() * 140 + (-110);
             let x_coord;
-            if (z_coord <= 5 && z_coord >= -2){
+            if (this.level == 1){
                 x_coord = Math.random() * 15 + 20;
             }
-            else if (z_coord >= -2 && z_coord >= 60-110){
-                x_coord = Math.random() * 35 + 20;
-            }
-            else if (z_coord >= -60-100){
-                x_coord = Math.random() * 70 + 20;
+            else if (this.level == 2){
+                x_coord = Math.random() * 15 + 40;
             }
             else {
-                x_coord = Math.random() * 15 + 20;
+                if (z_coord <= 5 && z_coord >= -2){
+                    x_coord = Math.random() * 15 + 20;
+                }
+                else if (z_coord >= -2 && z_coord >= 60-110){
+                    x_coord = Math.random() * 35 + 20;
+                }
+                else if (z_coord >= -60-100){
+                    x_coord = Math.random() * 70 + 20;
+                }
+                else {
+                    x_coord = Math.random() * 15 + 20;
+                }
             }
             this.target_coords.push([x_coord, z_coord, false]);
         }
     }
 
-    generate_targets(context, program_state){ // Finish Target functionality by changing colors and also recognizing hits
+    generate_targets(context, program_state, level){ // Finish Target functionality by changing colors and also recognizing hits
+        const scoreboard_transformation = Mat4.identity().times(Mat4.inverse(program_state.camera_inverse).times(Mat4.translation(3.48, 1.5, -5))).times(Mat4.scale(2,0.5,0.25));
+        this.shapes.bar.draw(context, program_state, scoreboard_transformation, this.materials.scoreboard);
         for (let i = 0; i < this.target_coords.length; i++){
             let transform = Mat4.identity();
             transform = transform
@@ -369,6 +387,16 @@ export class Assignment3 extends Scene {
                 target_i_material = this.materials.target.override({color: hex_color("#00FF00")});
             }
             this.shapes.circle.draw(context,program_state,transform,target_i_material);
+            const point_transformation = Mat4.identity().times(Mat4.inverse(program_state.camera_inverse).times(Mat4.translation(3.4 - (i*0.5), 1.5, -4.999))).times(Mat4.scale(0.1,0.1,0.1));
+            this.shapes.bar.draw(context, program_state, point_transformation, target_i_material);
+            if (this.targets_hit == 4){
+                this.targets_hit = 0;
+                this.level++;
+                this.ball_hit = false;
+                this.power_selected = false;
+                this.get_new_coords();
+                
+            }
         }
     }
 

@@ -1,8 +1,10 @@
 import {defs, tiny} from './examples/common.js';
 
 const {
-    Vector, Vector3, vec, vec3, vec4, color, hex_color, Shader, Matrix, Mat4, Light, Shape, Material, Scene,
+    Vector, Vector3, vec, vec3, vec4, color, hex_color, Shader, Matrix, Mat4, Light, Shape, Material, Scene, Texture
 } = tiny;
+
+const {Cube, Axis_Arrows, Textured_Phong} = defs
 
 export class Assignment3 extends Scene {
     constructor() {
@@ -20,6 +22,7 @@ export class Assignment3 extends Scene {
             sky: new defs.Square(1,1,1),
             pointer: new defs.Triangle(),
             bar: new defs.Square(),
+            cube: new defs.Cube(),
 
 
             // Creating a Lake
@@ -33,6 +36,7 @@ export class Assignment3 extends Scene {
             //Creating a Tree
             tree_stalk: new defs.Cube(),
             tree_head: new defs.Subdivision_Sphere(2),
+
         };
 
         // *** Materials
@@ -71,6 +75,11 @@ export class Assignment3 extends Scene {
             {ambient: 1, diffusivity: 1, color: hex_color("#FFFF00")}),
             bar: new Material(new defs.Phong_Shader(),
             {ambient: 1, diffusivity: 1, color: hex_color("#ADD8E6")}),
+            texture: new Material(new Textured_Phong(), {
+                color: color(0, 0, 0, 1),
+                ambient: 1,
+                texture: new Texture("assets/sky.jpg")
+            }),
         }
 
         this.initial_camera_location = Mat4.look_at(vec3(-450, 10, 0), vec3(0, 0, 0), vec3(1, 0, 0));
@@ -191,7 +200,7 @@ export class Assignment3 extends Scene {
             if (this.turn_angle >= 0){
                 pointer_rotation_2 = Mat4.rotation(this.turn_angle, 0, this.turn_angle, 1)
             }
-            this.shapes.pointer.draw(context,program_state, Mat4.translation(3*Math.cos(-this.turn_angle), 0, 3*Math.sin(-this.turn_angle)).times(Mat4.translation(0,1,0)).times(Mat4.scale(3,1,3)).times(pointer_rotation_2).times(pointer_rotation), this.materials.pointer);
+            // this.shapes.pointer.draw(context,program_state, Mat4.translation(3*Math.cos(-this.turn_angle), 0, 3*Math.sin(-this.turn_angle)).times(Mat4.translation(0,1,0)).times(Mat4.scale(3,1,3)).times(pointer_rotation_2).times(pointer_rotation), this.materials.pointer);
         }
 
         this.shapes.ball.draw(context, program_state, ball_transform, this.materials.ball);
@@ -199,6 +208,8 @@ export class Assignment3 extends Scene {
         this.draw_lake(context, program_state, 20, 10);
         this.draw_tree(context, program_state);
         this.draw_fish(context, program_state, t, -100, 0, 350, 0);
+        let sky_transformation = Mat4.inverse(program_state.camera_inverse).times(Mat4.scale(900,400,900));
+        this.shapes.cube.draw(context, program_state, sky_transformation, this.materials.texture);
 
         // Generate All Targets
         /*for (let i = 0; i < this.target_coords.length; i++){

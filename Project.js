@@ -35,7 +35,7 @@ export class Assignment3 extends Scene {
 
             //Creating a Tree
             tree_stalk: new defs.Cube(),
-            tree_head: new defs.Subdivision_Sphere(2),
+            tree_head: new (defs.Subdivision_Sphere.prototype.make_flat_shaded_version())(2),
 
         };
 
@@ -56,27 +56,45 @@ export class Assignment3 extends Scene {
                 {ambient: 1, diffusivity: 1, specularity: 0, color: hex_color("#ffffff")}),
 
             // Creating a Ground
-            ground: new Material(new Gouraud_Shader(),
-            {ambient: 0.5, diffusivity: 0.5, color: hex_color("#7CFC00")}),
+            //ground: new Material(new Gouraud_Shader(),
+            //{ambient: 0.5, diffusivity: 0.5, color: hex_color("#7CFC00")}),
+
+            ground: new Material(new Textured_Phong(), {
+                color: hex_color("#000000"),
+                ambient: 1,
+                texture: new Texture("assets/grass.png")
+            }),
 
             // Creating a Lake
-            lake: new Material(new defs.Phong_Shader(),
-            {ambient: 1, diffusivity: 1, color: hex_color("#00DCEC")}),
+            //lake: new Material(new defs.Phong_Shader(),
+            //{ambient: 1, diffusivity: 1, color: hex_color("#00DCEC")}),
+
+            lake: new Material(new Textured_Phong(), {
+                color: hex_color("#000000"),
+                ambient: 1,
+                texture: new Texture("assets/lake.jpeg")
+            }),
 
             // Creating a Fish
             fish_body: new Material(new Gouraud_Shader(), {ambient: 0.5, diffusivity: 0.5, specularity: 0, color: hex_color("#FFA500")}),
             fish_tail: new Material(new Gouraud_Shader(), {ambient: 0.5, diffusivity: 0.5, specularity: 0, color: hex_color("#000000")}),
 
             //Creating a Tree
-            tree_stalk: new Material(new Gouraud_Shader(), {ambient: 0.5, diffusivity: 0.5, color: hex_color("#725C42")}),
+            //tree_stalk: new Material(new Gouraud_Shader(), {ambient: 0.5, diffusivity: 0.5, color: hex_color("#725C42")}),
+            tree_stalk: new Material(new Textured_Phong(), {
+                color: hex_color("#000000"),
+                ambient: 1, specularity: 0, diffusivity:0,
+                texture: new Texture("assets/stalk.jpeg")
+            }),
             tree_head: new Material(new Gouraud_Shader(), {ambient: 0.5, diffusivity: 0.5, specularity: 0, color: hex_color("#7CFC00")}),
+            
 
             pointer: new Material(new defs.Phong_Shader(),
             {ambient: 1, diffusivity: 1, color: hex_color("#FFFF00")}),
             bar: new Material(new defs.Phong_Shader(),
             {ambient: 1, diffusivity: 1, color: hex_color("#ADD8E6")}),
             scoreboard: new Material(new defs.Phong_Shader(),
-            {ambient: 1, diffusivity: 1, color: hex_color("#FFE36E")}),
+            {ambient: 1, diffusivity: 0, specularity: 0, color: hex_color("#FFE36E")}),
             texture: new Material(new Textured_Phong(), {
                 color: color(0, 0, 0, 1),
                 ambient: 1,
@@ -130,6 +148,21 @@ export class Assignment3 extends Scene {
         if (this.level == 0){
             this.level++;
             this.get_new_coords();
+        }
+
+        this.draws = [];
+        this.dxs = [];
+        this.dzs = [];
+        for(let u = -450; u < 450; u += 75){
+            for(let v = -450; v < 450; v+= 50){
+                let draw = Math.floor(Math.random() * 3) + 1;
+                let dx = (Math.random() * 25);
+                let dy = (Math.random() * 35);
+
+                this.draws.push(draw);
+                this.dxs.push(dx);
+                this.dzs.push(dy);
+            }
         }
     }
 
@@ -426,24 +459,22 @@ export class Assignment3 extends Scene {
     }
 
     draw_tree(context, program_state){
+        let count = 0;
         let height = 40;
         for(let z = -450; z < 450; z += 75){
             for(let x = -450; x < 450; x+= 50){
                 if (z < -250 || z > 350){
-                    let transform = Mat4.identity();
-                    transform = transform.times(Mat4.translation(x, height, z)).times(Mat4.scale(5, height, 5));
-                    this.shapes.tree_stalk.draw(context, program_state, transform, this.materials.tree_stalk);
-                }
-            }
-        }
+                    if (this.draws[count] != 3) {
+                        let transform = Mat4.identity();
+                        transform = transform.times(Mat4.translation(x + this.dxs[count], height, z + this.dzs[count])).times(Mat4.scale(5, height, 5));
+                        this.shapes.tree_stalk.draw(context, program_state, transform, this.materials.tree_stalk);
 
-        for(let z = -450; z < 450; z += 75){
-            for(let x = -450; x < 450; x+= 50){
-                if (z < -250 || z > 350){
-                    let transform = Mat4.identity();
-                    transform = transform.times(Mat4.translation(x, 2 * height, z)).times(Mat4.scale(35, 35, 40));
-                    this.shapes.tree_head.draw(context, program_state, transform, this.materials.tree_head);
+                        transform = Mat4.identity();
+                        transform = transform.times(Mat4.translation(x + this.dxs[count], 2 * height, z + this.dzs[count])).times(Mat4.scale(35, 35, 40));
+                        this.shapes.tree_head.draw(context, program_state, transform, this.materials.tree_head);
+                    }
                 }
+                count = count + 1;
             }
         }
     }

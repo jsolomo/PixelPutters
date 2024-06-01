@@ -178,10 +178,10 @@ export class Assignment3 extends Scene {
                 this.power_selected = true;
             }
         });
-        this.key_triggered_button("Quick Restart", ["r"], () => {
-            this.ball_hit = !this.ball_hit
-            this.power_selected = !this.power_selected
-        });
+        // this.key_triggered_button("Quick Restart", ["r"], () => {
+        //     this.ball_hit = !this.ball_hit
+        //     this.power_selected = !this.power_selected
+        // });
         // this.key_triggered_button("Attach to moon", ["Control", "m"], () => this.attached = () => this.moon);
         this.new_line();
 
@@ -411,7 +411,7 @@ export class Assignment3 extends Scene {
             let target_i_material = this.materials.target;
             // console.log(vec3(this.x_t, this.y_t, this.z_t))
             // console.log(transform)
-            if (!this.target_coords[i][2] && (this.x_t >= transform[0][3]-5 && this.x_t <= transform[0][3] + 5 ) && (this.z_t >= -transform[2][3]  - 5  && this.z_t <= -transform[2][3] + 5 ) && this.y_t <= 1){
+            if (!this.target_coords[i][2] && (this.x_t >= transform[0][3]-5 && this.x_t <= transform[0][3] + 5 ) && (this.z_t >= -transform[2][3]  - 5  && this.z_t <= -transform[2][3] + 5 ) && this.y_t <= 1.5){
                 this.target_coords[i][2] = true;
                 this.targets_hit++;
             }

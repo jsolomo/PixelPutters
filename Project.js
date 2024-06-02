@@ -132,17 +132,17 @@ export class Assignment3 extends Scene {
             if (this.ball_hit){
                 return;
             }
-            if (dir == 0 && this.turn_angle > -Math.PI/4){
+            if (dir == 0 && this.turn_angle > -Math.PI/2){
                 this.turn_angle = this.turn_angle - Math.PI/20;
             }
-            else if (dir == 1 && this.turn_angle < Math.PI/4){
+            else if (dir == 1 && this.turn_angle < Math.PI/2){
                 this.turn_angle = this.turn_angle + Math.PI/20;
             }
-            if (this.turn_angle > Math.PI/4){
-                this.turn_angle = Math.PI/4;
+            if (this.turn_angle > Math.PI/2){
+                this.turn_angle = Math.PI/2;
             }
-            else if(this.turn_angle < -Math.PI/4){
-                this.turn_angle = -Math.PI/4;
+            else if(this.turn_angle < -Math.PI/2){
+                this.turn_angle = -Math.PI/2;
             }
         }
         

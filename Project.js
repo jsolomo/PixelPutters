@@ -23,6 +23,7 @@ export class Assignment3 extends Scene {
             pointer: new defs.Triangle(),
             bar: new defs.Square(),
             cube: new defs.Cube(),
+            square: new defs.Square(),
 
 
             // Creating a Lake
@@ -59,6 +60,11 @@ export class Assignment3 extends Scene {
             sun: new Material(new defs.Phong_Shader(),
                 {ambient: 1, diffusivity: 1, specularity: 0, color: hex_color("#ffffff")}),
 
+            fake_sun: new Material(new Textured_Phong(), {
+                color: hex_color("#000000"),
+                ambient: 1,
+                texture: new Texture("assets/sun.webp")}),
+
             // Creating a Ground
             //ground: new Material(new Gouraud_Shader(),
             //{ambient: 0.5, diffusivity: 0.5, color: hex_color("#7CFC00")}),
@@ -90,8 +96,29 @@ export class Assignment3 extends Scene {
                 ambient: 1, specularity: 0, diffusivity:0,
                 texture: new Texture("assets/stalk.jpeg")
             }),
-            tree_head: new Material(new Gouraud_Shader(), {ambient: 0.5, diffusivity: 0.5, specularity: 0, color: hex_color("#7CFC00")}),
-            
+            tree_head: new Material(new Gouraud_Shader(), {ambient: 0.5, diffusivity: 0.5, specularity: 0, color: hex_color("#8fa93a")}),
+
+            //tall grass
+            tall_grass: new Material(new Textured_Phong(), {
+                color: hex_color("#000000"),
+                ambient: 1, specularity: 0, diffusivity:0,
+                texture: new Texture("assets/tallgrass.webp")}),
+            mountains: new Material(new Textured_Phong(), {
+                color: hex_color("#000000"),
+                ambient: 1, specularity: 0, diffusivity:0,
+                texture: new Texture("assets/mountains.png")}),
+            forest: new Material(new Textured_Phong(), {
+                color: hex_color("#000000"),
+                ambient: 1, specularity: 0, diffusivity:0,
+                texture: new Texture("assets/forest.png")}),
+            city: new Material(new Textured_Phong(), {
+                color: hex_color("#000000"),
+                ambient: 1, specularity: 0, diffusivity:0,
+                texture: new Texture("assets/city.webp")}),
+            flag: new Material(new Textured_Phong(), {
+                color: hex_color("#000000"),
+                ambient: 1, specularity: 0, diffusivity:0,
+                texture: new Texture("assets/flag.png")}),
 
             pointer: new Material(new defs.Phong_Shader(),
             {ambient: 1, diffusivity: 1, color: hex_color("#FFFF00")}),
@@ -217,8 +244,7 @@ export class Assignment3 extends Scene {
         this.update_ball_coord(t);
         this.generate_powermeter(context, program_state, t);
 
-        
-        
+  
         let ball_transform = model_transform.times(Mat4.translation(this.x_t,this.y_t,-this.z_t,1)).times(Mat4.rotation(-this.turn_angle,1,-1,0)).times(Mat4.rotation(this.omega_t,0,0,-1));
         let model_transform_ground = model_transform.times(Mat4.rotation(Math.PI/2,1,0,0)).times(Mat4.translation(0,0,1,1)).times(Mat4.scale(1000,100,1000,1));
         let model_transform_sky = model_transform.times(Mat4.rotation(0,1,0,0)).times(Mat4.translation(0,0,-1000,1)).times(Mat4.scale(100,100,100,1));
@@ -258,6 +284,11 @@ export class Assignment3 extends Scene {
         this.draw_fish(context, program_state, t, -100, 0, 350, 0);
         let sky_transformation = Mat4.inverse(program_state.camera_inverse).times(Mat4.scale(900,400,900));
         this.shapes.cube.draw(context, program_state, sky_transformation, this.materials.texture);
+        this.draw_mountains(context,program_state);
+        this.draw_tallgrass(context,program_state);
+        this.draw_sun(context, program_state,t);
+        this.draw_forest(context, program_state);
+        this.draw_city(context, program_state);
 
         // Generate All Targets
         /*for (let i = 0; i < this.target_coords.length; i++){
@@ -342,6 +373,9 @@ export class Assignment3 extends Scene {
                     this.y_t = 1;
                     this.omega_t = this.wpos;
                     this.stopped = true;
+                    this.ball_hit = false;
+                    this.power_selected = false;
+                    this.num_bounce = 0;
 
                 }
 
@@ -355,6 +389,9 @@ export class Assignment3 extends Scene {
             
                 if (v_xt <= 0 && v_zt <= 0 && this.omega_t == this.wpos){
                     this.stopped = true;
+                    this.ball_hit = false;
+                    this.power_selected = false;
+                    this.num_bounce = 0;
                 }
                 
                     
@@ -375,6 +412,10 @@ export class Assignment3 extends Scene {
                             this.y_t = 1;
                             this.omega_t = this.wpos;
                             this.stopped = true;
+                            this.ball_hit = false;
+                            this.power_selected = false;
+                            this.num_bounce = 0;
+                            
                             break;
                         }
                     }
@@ -392,6 +433,9 @@ export class Assignment3 extends Scene {
                             this.y_t = 1;
                             this.omega_t = this.wpos;
                             this.stopped = true;
+                             this.ball_hit = false;
+                            this.power_selected = false;
+                            this.num_bounce = 0;
                             break;
                         }
                     }
@@ -412,14 +456,14 @@ export class Assignment3 extends Scene {
         }
         else{
 
-            if(this.hold < 40 && this.stopped==true){
+            if(this.hold < 8 && this.stopped==true){
                 this.x_t = this.xpos;
                 this.z_t = this.zpos;
                 this.y_t = 1;
                 this.omega_t = this.wpos; 
                 this.hold = this.hold+1;
             }
-            else if(this.hold >40 && this.stopped == true){
+            else if(this.hold > 8 && this.stopped == true){
                 this.ball_hit = false;
                 this.power_selected = false;
                 this.num_bounce = 0;
@@ -509,10 +553,20 @@ export class Assignment3 extends Scene {
         this.shapes.bar.draw(context, program_state, scoreboard_transformation, this.materials.scoreboard);
         for (let i = 0; i < this.target_coords.length; i++){
             let transform = Mat4.identity();
+            
+            let flag_transform = transform
+            .times(Mat4.translation(-450 + this.target_coords[i][0], 0, this.target_coords[i][1] + 50))
+            .times((Mat4.scale(5, 5, 5)))
+            .times(Mat4.rotation(Math.PI/2,0,1,0));
+
+            
+            
             transform = transform
-                .times(Mat4.translation(-450 + this.target_coords[i][0], 0.75, this.target_coords[i][1] + 50))
+                .times(Mat4.translation(-450 + this.target_coords[i][0], 0.5, this.target_coords[i][1] + 50))
                 .times((Mat4.scale(5, 0, 5, 1)))
                 .times(Mat4.rotation(Math.PI/2,1,0,0));
+
+        
                 // .times(((Mat4.scale(5, 0, 5, 1))
                 // .times(Mat4.rotation(Math.PI/2,1,0,0))))
                 // .times(Mat4.translation(-450 + this.target_coords[i][0], 0.75, this.target_coords[i][1] + 50))
@@ -529,6 +583,7 @@ export class Assignment3 extends Scene {
                 target_i_material = this.materials.target.override({color: hex_color("#00FF00")});
             }
             this.shapes.circle.draw(context,program_state,transform,target_i_material);
+            this.shapes.square.draw(context,program_state,flag_transform,this.materials.flag);
             const point_transformation = Mat4.identity().times(Mat4.inverse(program_state.camera_inverse).times(Mat4.translation(3.4 - (i*0.5), 1.5, -4.999))).times(Mat4.scale(0.1,0.1,0.1));
             this.shapes.bar.draw(context, program_state, point_transformation, target_i_material);
             if (this.targets_hit == 4){
@@ -571,7 +626,7 @@ export class Assignment3 extends Scene {
         let count = 0;
         let height = 40;
         for(let z = -450; z < 450; z += 75){
-            for(let x = -450; x < 450; x+= 50){
+            for(let x = -450; x < 250; x+= 50){
                 if (z < -250 || z > 350){
                     if (this.draws[count] != 3) {
                         let transform = Mat4.identity();
@@ -593,6 +648,69 @@ export class Assignment3 extends Scene {
         }
         this.firstpasstree = false;
     }
+
+    draw_tallgrass(context, program_state){
+        let count = 0;
+        let height = 2;
+        for(let z = -450; z < -200; z += 50){
+            for(let x = -450; x < 450; x+= 50){
+                if (z < -250 || z > -100){
+                    if (this.draws[count] != 3) {
+                        let transform = Mat4.identity();
+
+                        transform = transform.times(Mat4.translation(x + this.dxs[count], height, z + 10*this.dzs[count])).times(Mat4.scale(2, 5, 2)).times(Mat4.rotation(Math.PI/2,0,1,0));
+                        this.shapes.square.draw(context, program_state, transform,this.materials.tall_grass);
+                    }
+                }
+                count = count + 1;
+            }
+        }
+    }
+
+    draw_sun(context, program_state,t){
+        let transform = Mat4.identity().times(Mat4.translation(375, 150+20*Math.cos(t),100)).times(Mat4.scale(100, 100, 100)).times(Mat4.rotation(Math.PI/2,0,1,0));
+        this.shapes.square.draw(context, program_state, transform,this.materials.fake_sun);
+    }
+    draw_city(context, program_state){
+        let transform = Mat4.identity().times(Mat4.translation(300, 20,175)).times(Mat4.scale(100, 100, 100)).times(Mat4.rotation(Math.PI/2,0,1,0));
+        this.shapes.square.draw(context, program_state, transform,this.materials.city);
+        transform = Mat4.identity().times(Mat4.translation(275, 20,275)).times(Mat4.scale(50, 50, 50)).times(Mat4.rotation(Math.PI/2,0,1,0));
+        this.shapes.square.draw(context, program_state, transform,this.materials.city);
+        transform = Mat4.identity().times(Mat4.translation(260, 12,325)).times(Mat4.scale(25, 25, -25)).times(Mat4.rotation(Math.PI/2,0,1,0));
+        this.shapes.square.draw(context, program_state, transform,this.materials.city);
+        transform = Mat4.identity().times(Mat4.translation(260, 15,120)).times(Mat4.scale(30, 30, -30)).times(Mat4.rotation(Math.PI/2,0,1,0));
+        this.shapes.square.draw(context, program_state, transform,this.materials.city);
+        transform = Mat4.identity().times(Mat4.translation(260, 35,350)).times(Mat4.scale(75, 75, 75)).times(Mat4.rotation(Math.PI/4,0,1,0));
+        this.shapes.square.draw(context, program_state, transform,this.materials.city);
+    }
+
+    draw_mountains(context, program_state){
+        let transform = Mat4.identity().times(Mat4.translation(360,100,-100)).times(Mat4.scale(200,200, 200)).times(Mat4.rotation(Math.PI/2,0,1,0));
+        this.shapes.square.draw(context, program_state, transform,this.materials.mountains);
+        transform = Mat4.identity().times(Mat4.translation(350,50,-250)).times(Mat4.scale(100,100, -100)).times(Mat4.rotation(Math.PI/2,0,1,0));
+        this.shapes.square.draw(context, program_state, transform,this.materials.mountains);
+        transform = Mat4.identity().times(Mat4.translation(200,125,-400)).times(Mat4.scale(250,250, 250)).times(Mat4.rotation(-Math.PI/4,0,1,0));
+        this.shapes.square.draw(context, program_state, transform,this.materials.mountains);
+        transform = Mat4.identity().times(Mat4.translation(50,75,-450)).times(Mat4.scale(150,150, -150));
+        this.shapes.square.draw(context, program_state, transform,this.materials.mountains);
+    }
+
+
+    draw_forest(context, program_state){
+        let transform = Mat4.identity().times(Mat4.translation(-200,25,360)).times(Mat4.scale(50,50,50));
+        this.shapes.square.draw(context, program_state, transform,this.materials.forest);
+        transform = Mat4.identity().times(Mat4.translation(0,25,360)).times(Mat4.scale(50,50,50));
+        this.shapes.square.draw(context, program_state, transform,this.materials.forest);  
+        transform = Mat4.identity().times(Mat4.translation(-100,25,360)).times(Mat4.scale(50,50,50));
+        this.shapes.square.draw(context, program_state, transform,this.materials.forest);  
+        transform = Mat4.identity().times(Mat4.translation(100,25,360)).times(Mat4.scale(50,50,50));
+        this.shapes.square.draw(context, program_state, transform,this.materials.forest);
+    }
+
+     
+    
+
+    
     
     draw_ground(context, program_state, size) {
         let ground_transform = Mat4.identity();

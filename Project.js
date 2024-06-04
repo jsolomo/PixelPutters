@@ -49,7 +49,7 @@ export class Assignment3 extends Scene {
 
             ball: new Material(new Textured_Phong(), {
                 color: hex_color("#000000"),
-                ambient: 1,
+                ambient: 0.9,
                 texture: new Texture("assets/ball.jpg")
             }),
             target: new Material(new defs.Phong_Shader(),
@@ -99,7 +99,7 @@ export class Assignment3 extends Scene {
             {ambient: 1, diffusivity: 1, color: hex_color("#ADD8E6")}),
             scoreboard: new Material(new defs.Phong_Shader(),
             {ambient: 1, diffusivity: 0, specularity: 0, color: hex_color("#FFE36E")}),
-            sky: new Material(new Textured_Phong(), {
+            texture: new Material(new Textured_Phong(), {
                 color: color(0, 0, 0, 1),
                 ambient: 1,
                 texture: new Texture("assets/sky.jpg")
@@ -111,38 +111,44 @@ export class Assignment3 extends Scene {
 
         //number of bounces
         this.num_bounce = 0;
-        this.xpos = -450;
-        this.ypos = 0;
+        this.xpos = -445;
+        this.ypos = 1;
         this.zpos = 0;
         this.wpos =0;
         this.targets_hit = 0;
         this.ball_hit = false;
         this.turn_angle= 0;
         this.x_t =-445;
-        this.y_t = 0;
+        this.y_t = 1;
         this.z_t = 0;
+        this.stopped = false;
+        this.hold = 0;
         this.omega_t = 0;
         this.time = 0;
         this.power_selected = false;
         this.power_angle = 0;
         this.level = 0;
+        this.lakecoords = [];
+        this.treecoords = [];
+        this.firstpass = true;
+        this.firstpasstree =true;
 
         this.turn = function(dir) {
             // 0 = right, 1 = left
             if (this.ball_hit){
                 return;
             }
-            if (dir == 0 && this.turn_angle > -Math.PI/2){
+            if (dir == 0 && this.turn_angle > -Math.PI/4){
                 this.turn_angle = this.turn_angle - Math.PI/20;
             }
-            else if (dir == 1 && this.turn_angle < Math.PI/2){
+            else if (dir == 1 && this.turn_angle < Math.PI/4){
                 this.turn_angle = this.turn_angle + Math.PI/20;
             }
-            if (this.turn_angle > Math.PI/2){
-                this.turn_angle = Math.PI/2;
+            if (this.turn_angle > Math.PI/4){
+                this.turn_angle = Math.PI/4;
             }
-            else if(this.turn_angle < -Math.PI/2){
-                this.turn_angle = -Math.PI/2;
+            else if(this.turn_angle < -Math.PI/4){
+                this.turn_angle = -Math.PI/4;
             }
         }
         
@@ -209,14 +215,10 @@ export class Assignment3 extends Scene {
 
         let model_transform = Mat4.identity();
         this.update_ball_coord(t);
-        this.generate_powermeter(context, program_state, t)
-        if(!this.ball_hit && !this.power_selected) {
-            this.x_t = -445;
-            this.y_t = 1;
-            this.z_t = 0;
-            this.omega_t = 0;
-            this.time = t;
-        }
+        this.generate_powermeter(context, program_state, t);
+
+        
+        
         let ball_transform = model_transform.times(Mat4.translation(this.x_t,this.y_t,-this.z_t,1)).times(Mat4.rotation(-this.turn_angle,1,-1,0)).times(Mat4.rotation(this.omega_t,0,0,-1));
         let model_transform_ground = model_transform.times(Mat4.rotation(Math.PI/2,1,0,0)).times(Mat4.translation(0,0,1,1)).times(Mat4.scale(1000,100,1000,1));
         let model_transform_sky = model_transform.times(Mat4.rotation(0,1,0,0)).times(Mat4.translation(0,0,-1000,1)).times(Mat4.scale(100,100,100,1));
@@ -244,15 +246,18 @@ export class Assignment3 extends Scene {
             // this.shapes.pointer.draw(context,program_state, Mat4.translation(3*Math.cos(-this.turn_angle), 0, 3*Math.sin(-this.turn_angle)).times(Mat4.translation(0,1,0)).times(Mat4.scale(3,1,3)).times(pointer_rotation_2).times(pointer_rotation), this.materials.pointer);
         }
 
+
+        this.shapes.ball.arrays.texture_coord.forEach((v,i,l)=>v[0]=v[0]*3);
+        this.shapes.ball.arrays.texture_coord.forEach((v,i,l)=>v[1]=v[1]*3);
         this.shapes.ball.draw(context, program_state, ball_transform, this.materials.ball);
-        this.shapes.ball.arrays.texture_coord.forEach((v,i,l)=>v[0]=v[0]*20);
-        this.shapes.ball.arrays.texture_coord.forEach((v,i,l)=>v[1]=v[1]*20);
+
+        
         this.draw_ground(context, program_state, 500);
         this.draw_lake(context, program_state, 20, 10);
         this.draw_tree(context, program_state);
         this.draw_fish(context, program_state, t, -100, 0, 350, 0);
         let sky_transformation = Mat4.inverse(program_state.camera_inverse).times(Mat4.scale(900,400,900));
-        this.shapes.cube.draw(context, program_state, sky_transformation, this.materials.sky);
+        this.shapes.cube.draw(context, program_state, sky_transformation, this.materials.texture);
 
         // Generate All Targets
         /*for (let i = 0; i < this.target_coords.length; i++){
@@ -280,19 +285,20 @@ export class Assignment3 extends Scene {
         const I_ball = 8.5054*10**(-6); //kg *m^2
         const r = 0.43/2; //m
 
-        if (this.ball_hit && this.power_selected){
+
+        if (this.ball_hit ==true && this.power_selected ==true && this.stopped == false){
             let time_t = (t - this.time)-2;
             let theta = this.turn_angle;
             let gamma = Math.PI/4;
 
 
-            if(time_t < 0){
+            if( time_t < 0){
                 this.xpos = this.x_t;
                 this.ypos = this.y_t;
                 this.zpos = this.z_t;
             }
             else{
-                   let phi = this.power_angle / 2;
+                   let phi = this.power_angle;
             const g= 9.81; // m/s^2
 
             let v_0 = Math.sqrt((24.90*(phi*180/Math.PI)*0.05)/(((1/2)*m_ball*Math.sin(gamma))+((1/2)*I_ball*(1/(r**2))*Math.cos(gamma))));
@@ -300,7 +306,7 @@ export class Assignment3 extends Scene {
             let v_0y = v_0*Math.sin(40*Math.PI/180)*Math.sin(gamma);
 
             this.x_t =v_0x*time_t*Math.cos(theta)-((g/8)*(time_t*Math.cos(theta))**2) - 445;
-            let v_xt =v_0x*Math.cos(theta)-((g/4)*time_t*Math.cos(theta)**2);
+            let v_xt =v_0x*Math.cos(theta)-((g/2)*time_t*Math.cos(theta)**2);
 
             let a = (1/(2*g))*(v_0y**2);
             let omega_n = (2*Math.PI*g)/(v_0y);
@@ -311,52 +317,140 @@ export class Assignment3 extends Scene {
             let v_zt =v_0x*Math.sin(theta)-((g/4)*time_t*Math.sin(theta)**2);
 
             let omega_ball = (v_0*Math.cos(gamma))/r;
-            this.omega_t = (omega_ball/10)*time_t -((g/2)*time_t*Math.sin(theta)**2);
+            this.omega_t = (omega_ball/30)*time_t -((g/2)*time_t*Math.sin(theta)**2);
 
 
+
+
+                
             if(this.num_bounce < 4){
                 if(this.y_t <= 1+10**(-2)){
                     this.num_bounce = this.num_bounce + 1;
                     this.xpos =this.x_t;
-                    this.ypos= this.y_t;
+                    this.ypos= 1;
                     this.zpos = this.z_t;
                     this.wpos = this.omega_t;
                 }
             }
             else {
                 // this.t = 0;
+
+                
                 if(v_xt <0 || v_zt <0){
                     this.x_t = this.xpos;
                     this.z_t = this.zpos;
+                    this.y_t = 1;
                     this.omega_t = this.wpos;
+                    this.stopped = true;
 
                 }
+
 
             this.xpos =this.x_t;
             this.ypos= this.y_t;
             this.zpos = this.z_t;
             this.wpos = this.omega_t;
 
+
             
                 if (v_xt <= 0 && v_zt <= 0 && this.omega_t == this.wpos){
-                    this.ball_hit = false;
-                    this.power_selected = false;
-                    this.num_bounce = 0;
-                    v_0 = 0;
+                    this.stopped = true;
                 }
                 
                     
                
             }
+
+            
+             //ball falls in water
+                for(let i = 0; i < this.lakecoords.length; i++){
+
+                    let center_x = this.lakecoords.at(i).at(0);
+                    let center_z = -1*this.lakecoords.at(i).at(1);
+
+                    if(center_x-10.1 < this.x_t && center_x+10.1 > this.x_t && center_z -10.1  < this.z_t && center_z+10.1 > this.z_t){
+                        if(this.y_t <=2){
+                            this.x_t = this.xpos;
+                            this.z_t = this.zpos;
+                            this.y_t = 1;
+                            this.omega_t = this.wpos;
+                            this.stopped = true;
+                            break;
+                        }
+                    }
+                }
+
+            //ball runs into tree
+                 for(let i = 0; i < this.treecoords.length; i++){
+
+                    let center_x = this.treecoords.at(i).at(0);
+                    let center_z = -1*this.treecoords.at(i).at(1);
+
+                    if(center_x-5.50 < this.x_t && center_x+5.50 > this.x_t && center_z -5.50  < this.z_t && center_z+5.50 > this.z_t){
+                            this.x_t = this.xpos;
+                            this.z_t = this.zpos;
+                            this.y_t = 1;
+                            this.omega_t = this.wpos;
+                            this.stopped = true;
+                            break;
+                        }
+                    }
+                
+
+            
             // console.log(theta)
             if (t - this.time >= 30){
                 this.ball_hit = false;
                 this.power_selected = false;
                 this.num_bounce = 0;
                 v_0= 0;
+                v_zt =0;
+                
             }
                 
             }
+        }
+        else{
+
+            if(this.hold < 40 && this.stopped==true){
+                this.x_t = this.xpos;
+                this.z_t = this.zpos;
+                this.y_t = 1;
+                this.omega_t = this.wpos; 
+                this.hold = this.hold+1;
+            }
+            else if(this.hold >40 && this.stopped == true){
+                this.ball_hit = false;
+                this.power_selected = false;
+                this.num_bounce = 0;
+
+                 this.x_t =-445;
+                this.y_t = 1;
+                this.z_t = 0;
+                this.stopped = false;
+                this.xpos =-445;
+                this.ypos =1;
+                this.zpos =0;
+                this.time = t;
+                this.hold = 0;
+                
+            }
+            else
+            {
+                
+                this.x_t =-445;
+                this.y_t = 1;
+                this.z_t = 0;
+                this.stopped = false;
+                this.xpos =-445;
+                this.ypos =1;
+                this.zpos =0;
+                this.time = t;
+                this.hold = 0;
+
+            }
+           
+            
         }
     }
 
@@ -373,7 +467,7 @@ export class Assignment3 extends Scene {
             let z_aim = Math.sin(-this.turn_angle + off_set) * bar_dist;
 
             this.power_angle = -Math.PI/4 * Math.cos((Math.PI) * t) + Math.PI/4;
-            const bar_transform = Mat4.identity().times(Mat4.inverse(program_state.camera_inverse).times(Mat4.translation(-3.48, 1, -5.27))).times(Mat4.scale(0.25,1,0.25));
+            const bar_transform = Mat4.identity().times(Mat4.inverse(program_state.camera_inverse).times(Mat4.translation(-3.48, 1, -5.25))).times(Mat4.scale(0.25,1,0.25));
             this.shapes.bar.draw(context, program_state, bar_transform, this.materials.bar);
             const picker_transform = Mat4.identity().times((Mat4.translation(0,-0.9* Math.cos(Math.PI*t) + 0.9, 0).times(Mat4.inverse(program_state.camera_inverse).times(Mat4.translation(-3.48, 0.1, -5.25)).times(Mat4.scale(0.3,0.06,0.2)))));
             this.shapes.bar.draw(context, program_state, picker_transform, this.materials.pointer);
@@ -487,17 +581,26 @@ export class Assignment3 extends Scene {
                         transform = Mat4.identity();
                         transform = transform.times(Mat4.translation(x + this.dxs[count], 2 * height, z + this.dzs[count])).times(Mat4.scale(35, 35, 40));
                         this.shapes.tree_head.draw(context, program_state, transform, this.materials.tree_head);
+
+
+                            if(this.firstpasstree == true){
+                              this.treecoords.push([x + this.dxs[count], z + this.dzs[count]]);  
+                            }
                     }
                 }
                 count = count + 1;
             }
         }
+        this.firstpasstree = false;
     }
     
     draw_ground(context, program_state, size) {
         let ground_transform = Mat4.identity();
         ground_transform = ground_transform.times(Mat4.scale(size,10,size,1))
             .times(Mat4.rotation(Math.PI/2,1,0,0));
+
+        this.shapes.ground.arrays.texture_coord.forEach((v,i,l)=>v[0]=v[0]*50);
+        this.shapes.ground.arrays.texture_coord.forEach((v,i,l)=>v[1]=v[1]*50);
         this.shapes.ground.draw(context, program_state, ground_transform, this.materials.ground);
     }
     
@@ -511,9 +614,14 @@ export class Assignment3 extends Scene {
                     lake_transform = lake_transform.times(Mat4.translation(x * 20 - 200, 0.5, z * 20 + 150))
                     .times(Mat4.scale(10,5,10)).times(Mat4.rotation(Math.PI/2, 1, 0,0));
                     this.shapes.lake.draw(context,program_state,lake_transform,this.materials.lake);
+
+                    if(this.firstpass == true){
+                      this.lakecoords.push([x * 20 - 200,z * 20 + 150]);  
+                    }
                 }
             }
         }
+        this.firstpass = false;
     }
 }
    

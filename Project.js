@@ -165,17 +165,17 @@ export class Assignment3 extends Scene {
             if (this.ball_hit){
                 return;
             }
-            if (dir == 0 && this.turn_angle > -Math.PI/2){
+            if (dir == 0 && this.turn_angle > -Math.PI/4){
                 this.turn_angle = this.turn_angle - Math.PI/20;
             }
-            else if (dir == 1 && this.turn_angle < Math.PI/2){
+            else if (dir == 1 && this.turn_angle < Math.PI/4){
                 this.turn_angle = this.turn_angle + Math.PI/20;
             }
-            if (this.turn_angle > Math.PI/2){
-                this.turn_angle = Math.PI/2;
+            if (this.turn_angle > Math.PI/4){
+                this.turn_angle = Math.PI/4;
             }
-            else if(this.turn_angle < -Math.PI/2){
-                this.turn_angle = -Math.PI/2;
+            else if(this.turn_angle < -Math.PI/4){
+                this.turn_angle = -Math.PI/4;
             }
         }
         
@@ -215,10 +215,10 @@ export class Assignment3 extends Scene {
                 this.power_selected = true;
             }
         });
-        // this.key_triggered_button("Quick Restart", ["r"], () => {
-        //     this.ball_hit = !this.ball_hit
-        //     this.power_selected = !this.power_selected
-        // });
+        this.key_triggered_button("Quick Restart", ["r"], () => {
+            this.ball_hit = false;
+            this.power_selected = false;
+        });
         // this.key_triggered_button("Attach to moon", ["Control", "m"], () => this.attached = () => this.moon);
         this.new_line();
 
@@ -520,9 +520,10 @@ export class Assignment3 extends Scene {
 
     get_new_coords(){
         this.target_coords = [];
+        
         for (let j = 0; j < 4; j++){
             console.log(this.level)
-            let z_coord = Math.random() * 140 + (-110);
+            let z_coord = Math.random() * (-40) + (-30);
             let x_coord;
             if (this.level == 1){
                 x_coord = Math.random() * 15 + 20;

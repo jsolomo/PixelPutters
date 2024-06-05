@@ -511,7 +511,7 @@ export class Assignment3 extends Scene {
             let z_aim = Math.sin(-this.turn_angle + off_set) * bar_dist;
 
             this.power_angle = -Math.PI/4 * Math.cos((Math.PI) * t) + Math.PI/4;
-            const bar_transform = Mat4.identity().times(Mat4.inverse(program_state.camera_inverse).times(Mat4.translation(-3.48, 1, -5.25))).times(Mat4.scale(0.25,1,0.25));
+            const bar_transform = Mat4.identity().times(Mat4.inverse(program_state.camera_inverse).times(Mat4.translation(-3.48, 1, -5.26))).times(Mat4.scale(0.25,1,0.25));
             this.shapes.bar.draw(context, program_state, bar_transform, this.materials.bar);
             const picker_transform = Mat4.identity().times((Mat4.translation(0,-0.9* Math.cos(Math.PI*t) + 0.9, 0).times(Mat4.inverse(program_state.camera_inverse).times(Mat4.translation(-3.48, 0.1, -5.25)).times(Mat4.scale(0.3,0.06,0.2)))));
             this.shapes.bar.draw(context, program_state, picker_transform, this.materials.pointer);

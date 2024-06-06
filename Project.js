@@ -159,6 +159,8 @@ export class Assignment3 extends Scene {
         this.treecoords = [];
         this.firstpass = true;
         this.firstpasstree =true;
+        this.pause = false;
+        this.time_pause = 0.0;
 
         this.turn = function(dir) {
             // 0 = right, 1 = left
@@ -309,192 +311,161 @@ export class Assignment3 extends Scene {
 
     }
 
-    update_ball_coord(t){
+    update_ball_coord(t) {
         //Ball and Club Properties
         const m_ball = 0.046; // kg
         const I_club = 1.28; //kg *m^2
         const I_ball = 8.5054*10**(-6); //kg *m^2
         const r = 0.43/2; //m
 
-
-        if (this.ball_hit ==true && this.power_selected ==true && this.stopped == false){
-            let time_t = (t - this.time)-2;
-            let theta = this.turn_angle;
-            let gamma = Math.PI/4;
-
-
-            if( time_t < 0){
-                this.xpos = this.x_t;
-                this.ypos = this.y_t;
-                this.zpos = this.z_t;
-            }
-            else{
-                   let phi = this.power_angle;
-            const g= 9.81; // m/s^2
-
-            let v_0 = Math.sqrt((24.90*(phi*180/Math.PI)*0.05)/(((1/2)*m_ball*Math.sin(gamma))+((1/2)*I_ball*(1/(r**2))*Math.cos(gamma))));
-            let v_0x = v_0*Math.cos(40*Math.PI/180)*Math.sin(gamma);
-            let v_0y = v_0*Math.sin(40*Math.PI/180)*Math.sin(gamma);
-
-            this.x_t =v_0x*time_t*Math.cos(theta)-((g/8)*(time_t*Math.cos(theta))**2) - 445;
-            let v_xt =v_0x*Math.cos(theta)-((g/2)*time_t*Math.cos(theta)**2);
-
-            let a = (1/(2*g))*(v_0y**2);
-            let omega_n = (2*Math.PI*g)/(v_0y);
-            let alpha = 0.3;
-            this.y_t =Math.abs(a*Math.sin(omega_n*time_t)*Math.exp(-1*alpha*omega_n*time_t)) + 1;
-
-            this.z_t =v_0x*time_t*Math.sin(theta)-((g/8)*(time_t*Math.sin(theta))**2);
-            let v_zt =v_0x*Math.sin(theta)-((g/4)*time_t*Math.sin(theta)**2);
-
-            let omega_ball = (v_0*Math.cos(gamma))/r;
-            this.omega_t = (omega_ball/30)*time_t -((g/2)*time_t*Math.sin(theta)**2);
-
-
-
-
+        if (this.pause == true){
+            if (t > this.time_pause){
+                this.pause = false;
+                this.time_pause = false;
                 
-            if(this.num_bounce < 4){
-                if(this.y_t <= 1+10**(-2)){
-                    this.num_bounce = this.num_bounce + 1;
-                    this.xpos =this.x_t;
-                    this.ypos= 1;
+                this.x_t = this.xpos;
+                this.z_t = this.zpos;
+                this.y_t = 1;
+                this.omega_t = this.wpos;
+                this.stopped = true;
+                this.ball_hit = false;
+                this.power_selected = false;
+                this.num_bounce = 0;
+            }
+        } else {
+            if (this.ball_hit ==true && this.power_selected ==true && this.stopped == false) {
+                let time_t = (t - this.time)-2;
+                let theta = this.turn_angle;
+                let gamma = Math.PI/4;
+    
+                if( time_t < 0) {
+                    this.xpos = this.x_t;
+                    this.ypos = this.y_t;
                     this.zpos = this.z_t;
-                    this.wpos = this.omega_t;
-                }
-            }
-            else {
-                // this.t = 0;
-
-                
-                if(v_xt <0 || v_zt <0){
-                    this.x_t = this.xpos;
-                    this.z_t = this.zpos;
-                    this.y_t = 1;
-                    this.omega_t = this.wpos;
-                    this.stopped = true;
-                    this.ball_hit = false;
-                    this.power_selected = false;
-                    this.num_bounce = 0;
-
-                }
-
-
-            this.xpos =this.x_t;
-            this.ypos= this.y_t;
-            this.zpos = this.z_t;
-            this.wpos = this.omega_t;
-
-
-            
-                if (v_xt <= 0 && v_zt <= 0 && this.omega_t == this.wpos){
-                    this.stopped = true;
-                    this.ball_hit = false;
-                    this.power_selected = false;
-                    this.num_bounce = 0;
-                }
-                
+                } else {
+                    let phi = this.power_angle;
+                    const g= 9.81; // m/s^2
+    
+                    let v_0 = Math.sqrt((24.90*(phi*180/Math.PI)*0.05)/(((1/2)*m_ball*Math.sin(gamma))+((1/2)*I_ball*(1/(r**2))*Math.cos(gamma))));
+                    let v_0x = v_0*Math.cos(40*Math.PI/180)*Math.sin(gamma);
+                    let v_0y = v_0*Math.sin(40*Math.PI/180)*Math.sin(gamma);
+    
+                    this.x_t =v_0x*time_t*Math.cos(theta)-((g/8)*(time_t*Math.cos(theta))**2) - 445;
+                    let v_xt =v_0x*Math.cos(theta)-((g/2)*time_t*Math.cos(theta)**2);
+    
+                    let a = (1/(2*g))*(v_0y**2);
+                    let omega_n = (2*Math.PI*g)/(v_0y);
+                    let alpha = 0.3;
+                    this.y_t =Math.abs(a*Math.sin(omega_n*time_t)*Math.exp(-1*alpha*omega_n*time_t)) + 1;
+    
+                    this.z_t =v_0x*time_t*Math.sin(theta)-((g/8)*(time_t*Math.sin(theta))**2);
+                    let v_zt =v_0x*Math.sin(theta)-((g/4)*time_t*Math.sin(theta)**2);
+    
+                    let omega_ball = (v_0*Math.cos(gamma))/r;
+                    this.omega_t = (omega_ball/30)*time_t -((g/2)*time_t*Math.sin(theta)**2);
                     
-               
-            }
-
-            
-             //ball falls in water
-                for(let i = 0; i < this.lakecoords.length; i++){
-
-                    let center_x = this.lakecoords.at(i).at(0);
-                    let center_z = -1*this.lakecoords.at(i).at(1);
-
-                    if(center_x-10.1 < this.x_t && center_x+10.1 > this.x_t && center_z -10.1  < this.z_t && center_z+10.1 > this.z_t){
-                        if(this.y_t <=2){
-                            this.x_t = this.xpos;
-                            this.z_t = this.zpos;
-                            this.y_t = 1;
-                            this.omega_t = this.wpos;
+                    if(this.num_bounce < 4){
+                        if(this.y_t <= 1+10**(-2)){
+                            this.num_bounce = this.num_bounce + 1;
+                            this.xpos =this.x_t;
+                            this.ypos= 1;
+                            this.zpos = this.z_t;
+                            this.wpos = this.omega_t;
+                        }
+                    } else {
+                        if(v_xt <0 || v_zt <0){
+                            this.pause = true;
+                            this.time_pause = t + 3.0;
+                        }
+    
+                        this.xpos =this.x_t;
+                        this.ypos= this.y_t;
+                        this.zpos = this.z_t;
+                        this.wpos = this.omega_t;
+    
+                        if (v_xt <= 0 && v_zt <= 0 && this.omega_t == this.wpos){
                             this.stopped = true;
                             this.ball_hit = false;
                             this.power_selected = false;
                             this.num_bounce = 0;
-                            
-                            break;
+
+                            //this.pause = true;
+                            //this.time_pause = t + 3.0;
+                        }     
+                    }
+    
+                    //ball falls in water
+                    for(let i = 0; i < this.lakecoords.length; i++){
+                        let center_x = this.lakecoords.at(i).at(0);
+                        let center_z = -1*this.lakecoords.at(i).at(1);
+    
+                        if(center_x-10.1 < this.x_t && center_x+10.1 > this.x_t && center_z -10.1  < this.z_t && center_z+10.1 > this.z_t){
+                            if(this.y_t <=2){
+                                this.pause = true;
+                                this.time_pause = t + 3.0;
+                                break;
+                            }
                         }
                     }
-                }
-
-            //ball runs into tree
-                 for(let i = 0; i < this.treecoords.length; i++){
-
-                    let center_x = this.treecoords.at(i).at(0);
-                    let center_z = -1*this.treecoords.at(i).at(1);
-
-                    if(center_x-5.50 < this.x_t && center_x+5.50 > this.x_t && center_z -5.50  < this.z_t && center_z+5.50 > this.z_t){
-                            this.x_t = this.xpos;
-                            this.z_t = this.zpos;
-                            this.y_t = 1;
-                            this.omega_t = this.wpos;
-                            this.stopped = true;
-                             this.ball_hit = false;
+    
+                    //ball runs into tree
+                    for(let i = 0; i < this.treecoords.length; i++){
+                        let center_x = this.treecoords.at(i).at(0);
+                        let center_z = -1*this.treecoords.at(i).at(1);
+    
+                        if(center_x-5.50 < this.x_t && center_x+5.50 > this.x_t && center_z -5.50  < this.z_t && center_z+5.50 > this.z_t){
+                                this.pause = true;
+                                this.time_pause = t + 3.0;
+                                break;
+                            }
+                        }
+            
+                        // console.log(theta)
+                        if (t - this.time >= 30){
+                            this.ball_hit = false;
                             this.power_selected = false;
                             this.num_bounce = 0;
-                            break;
+                            v_0= 0;
+                            v_zt =0;
+                            
                         }
                     }
-                
+            } else {
+                if(this.hold < 8 && this.stopped==true){
+                    this.x_t = this.xpos;
+                    this.z_t = this.zpos;
+                    this.y_t = 1;
+                    this.omega_t = this.wpos; 
+                    this.hold = this.hold+1;
+                } else if (this.hold > 8 && this.stopped == true) {
+                    this.ball_hit = false;
+                    this.power_selected = false;
+                    this.num_bounce = 0;
 
-            
-            // console.log(theta)
-            if (t - this.time >= 30){
-                this.ball_hit = false;
-                this.power_selected = false;
-                this.num_bounce = 0;
-                v_0= 0;
-                v_zt =0;
-                
-            }
-                
-            }
-        }
-        else{
+                    this.x_t =-445;
+                    this.y_t = 1;
+                    this.z_t = 0;
+                    this.stopped = false;
+                    this.xpos =-445;
+                    this.ypos =1;
+                    this.zpos =0;
+                    this.time = t;
+                    this.hold = 0;
 
-            if(this.hold < 8 && this.stopped==true){
-                this.x_t = this.xpos;
-                this.z_t = this.zpos;
-                this.y_t = 1;
-                this.omega_t = this.wpos; 
-                this.hold = this.hold+1;
+                    this.pause = true;
+                    this.time_pause = t + 3.0;
+                } else {
+                    this.x_t =-445;
+                    this.y_t = 1;
+                    this.z_t = 0;
+                    this.stopped = false;
+                    this.xpos =-445;
+                    this.ypos =1;
+                    this.zpos =0;
+                    this.time = t;
+                    this.hold = 0;
+                }  
             }
-            else if(this.hold > 8 && this.stopped == true){
-                this.ball_hit = false;
-                this.power_selected = false;
-                this.num_bounce = 0;
-
-                 this.x_t =-445;
-                this.y_t = 1;
-                this.z_t = 0;
-                this.stopped = false;
-                this.xpos =-445;
-                this.ypos =1;
-                this.zpos =0;
-                this.time = t;
-                this.hold = 0;
-                
-            }
-            else
-            {
-                
-                this.x_t =-445;
-                this.y_t = 1;
-                this.z_t = 0;
-                this.stopped = false;
-                this.xpos =-445;
-                this.ypos =1;
-                this.zpos =0;
-                this.time = t;
-                this.hold = 0;
-
-            }
-           
-            
         }
     }
 
